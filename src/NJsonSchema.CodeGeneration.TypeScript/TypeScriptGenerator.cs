@@ -152,6 +152,14 @@ namespace NJsonSchema.CodeGeneration.TypeScript
                 var template = Settings.TemplateFactory.CreateTemplate("TypeScript", templateName, model);
                 return new CodeArtifact(typeName, CodeArtifactType.Enum, CodeArtifactLanguage.TypeScript, CodeArtifactCategory.Contract, template);
             }
+            
+            if (schema.OneOf.Count > 1)
+            {
+                var model = new OneOfTemplateModel(typeName, schema, _resolver, Settings);
+                var templateName = $"{nameof(TypeScriptEnumStyle.Enum)}.{nameof(TypeScriptEnumStyle.StringLiteral)}";
+                var template = Settings.TemplateFactory.CreateTemplate("TypeScript", templateName, model);
+                return new CodeArtifact(typeName, CodeArtifactType.Enum, CodeArtifactLanguage.TypeScript, CodeArtifactCategory.Contract, template);
+            } 
             else
             {
                 var model = new ClassTemplateModel(typeName, typeNameHint, Settings, _resolver, schema, RootObject);
