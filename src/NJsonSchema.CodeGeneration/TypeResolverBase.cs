@@ -93,9 +93,9 @@ namespace NJsonSchema.CodeGeneration
                 
                 foreach (var jsonSchema in newOneOf)
                 {
-                    schema.OneOf.Add(jsonSchema);    
+                    schema.OneOf.Add(jsonSchema);
+                    schema.Enumeration.Add(jsonSchema);
                 }
-
                 return schema;
             }
             // TODO: Method on JsonSchema4?

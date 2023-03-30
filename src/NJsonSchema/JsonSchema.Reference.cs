@@ -36,6 +36,8 @@ namespace NJsonSchema
                     return schema._allOf.First(s => !s.HasReference && !s.IsDictionary).ActualSchema;
                 }
 
+                if (schema._oneOf.Count > 0)
+                    return ActualSchema;
                 return schema._oneOf.FirstOrDefault(o => !o.IsNullable(SchemaType.JsonSchema))?.ActualSchema ?? ActualSchema;
             }
         }
