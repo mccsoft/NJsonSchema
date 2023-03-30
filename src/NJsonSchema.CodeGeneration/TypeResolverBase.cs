@@ -86,12 +86,14 @@ namespace NJsonSchema.CodeGeneration
         /// <returns>The actually resolvable schema</returns>
         public virtual JsonSchema RemoveNullability(JsonSchema schema)
         {
-            if (schema.OneOf.Count > 1)
+            var nonNullableOneOfSchemas =
+                schema.OneOf.Where(o => !o.IsNullable(SchemaType.JsonSchema)).ToList();
+                
+            if (nonNullableOneOfSchemas.Count > 1)
             {
-                var newOneOf = schema.OneOf.Select(x => RemoveNullability(x)).ToList();
                 schema.OneOf.Clear();
                 
-                foreach (var jsonSchema in newOneOf)
+                foreach (var jsonSchema in nonNullableOneOfSchemas)
                 {
                     schema.OneOf.Add(jsonSchema);
                     schema.Enumeration.Add(jsonSchema);
@@ -99,7 +101,7 @@ namespace NJsonSchema.CodeGeneration
                 return schema;
             }
             // TODO: Method on JsonSchema4?
-            return schema.OneOf.FirstOrDefault(o => !o.IsNullable(SchemaType.JsonSchema)) ?? schema;
+            return nonNullableOneOfSchemas.FirstOrDefault() ?? schema;
         }
 
         /// <summary>Gets the actual schema (i.e. when not referencing a type schema or it is inlined)

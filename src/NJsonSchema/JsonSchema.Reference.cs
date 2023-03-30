@@ -8,6 +8,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using Newtonsoft.Json;
 using NJsonSchema.References;
@@ -36,9 +37,12 @@ namespace NJsonSchema
                     return schema._allOf.First(s => !s.HasReference && !s.IsDictionary).ActualSchema;
                 }
 
-                if (schema._oneOf.Count > 0)
-                    return ActualSchema;
-                return schema._oneOf.FirstOrDefault(o => !o.IsNullable(SchemaType.JsonSchema))?.ActualSchema ?? ActualSchema;
+                var nonNullableOneOfSchemas =
+                    schema.OneOf.ToList().Where(o => !o.IsNullable(SchemaType.JsonSchema)).ToList();
+
+                return nonNullableOneOfSchemas.Count == 1 
+                    ? nonNullableOneOfSchemas.First().ActualSchema 
+                    : ActualSchema;
             }
         }
 
