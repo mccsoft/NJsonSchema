@@ -43,7 +43,7 @@ namespace NJsonSchema.Generation
             }
 
             var camelCasePolicy = IsCamelCaseEnumNamingPolicy(jsonStringEnumConverter);
-            settings.Converters.Add(new StringEnumConverter(camelCasePolicy));
+            settings.Converters.Add(new StringEnumConverter(camelCasePolicy ? new CamelCaseNamingStrategy() : new DefaultNamingStrategy()));
 
             return settings;
         }
