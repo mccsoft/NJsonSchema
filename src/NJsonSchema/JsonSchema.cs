@@ -404,7 +404,18 @@ namespace NJsonSchema
 
                 try
                 {
-                    return properties.ToDictionary(p => p.Key, p => p.Value);
+                    return properties.GroupBy(x => x.Key).ToDictionary(x => x.Key, x =>
+                    {
+                        if (x.Count() > 1)
+                        {
+                            if (ResponsibleDiscriminatorObject?.PropertyName == x.Key)
+                                return x.Last().Value;
+                            
+                            throw new ArgumentException();
+                        }
+
+                        return x.First().Value;
+                    });
                 }
                 catch (ArgumentException)
                 {
