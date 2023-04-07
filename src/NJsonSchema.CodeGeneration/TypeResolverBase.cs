@@ -75,7 +75,43 @@ namespace NJsonSchema.CodeGeneration
 
                     if (IsDefinitionTypeSchema(schema))
                     {
-                        GetOrGenerateTypeName(schema, pair.Key);
+                        var nonNullableOneOfSchemas = schema.OneOf.Where(o => !o.IsNullable(SchemaType.JsonSchema)).ToList();
+                        
+                        // support for multiple type definitions via enumerations
+                        if (nonNullableOneOfSchemas.Count > 1 && schema.Type == JsonObjectType.None)
+                        {
+                            foreach (var jsonSchema in schema.OneOf)
+                            {
+                                schema.Enumeration.Add(jsonSchema);
+                            }
+                        }
+
+                        // handle one-of inheritance
+                        if (schema.ActualDiscriminatorObject != null && schema.OneOf.Any())
+                        {
+                            var newSchema = new JsonSchema
+                            {
+                            };
+                            
+                            foreach (var mapping in schema.ActualDiscriminatorObject.Mapping)
+                            {
+                                JsonSchema parentSchema = mapping.Value.ActualSchema;
+                                newSchema.AllOf.Add(parentSchema);
+                                parentSchema.Discriminator ??= schema.ActualDiscriminatorObject.PropertyName;
+
+                                parentSchema.DiscriminatorObject ??= new OpenApiDiscriminator()
+                                {
+                                    PropertyName = schema.ActualDiscriminatorObject.PropertyName,
+                                };
+                                parentSchema.DiscriminatorObject.Mapping.Add(mapping.Key, newSchema);
+                            }
+                            newSchema.AllOf.Add(schema);
+                            GetOrGenerateTypeName(newSchema, pair.Key);
+                        }
+                        else
+                        {
+                            GetOrGenerateTypeName(schema, pair.Key);
+                        }
                     }
                 }
             }
@@ -86,22 +122,13 @@ namespace NJsonSchema.CodeGeneration
         /// <returns>The actually resolvable schema</returns>
         public virtual JsonSchema RemoveNullability(JsonSchema schema)
         {
-            var nonNullableOneOfSchemas =
-                schema.OneOf.Where(o => !o.IsNullable(SchemaType.JsonSchema)).ToList();
-                
-            if (nonNullableOneOfSchemas.Count > 1)
-            {
-                schema.OneOf.Clear();
-                
-                foreach (var jsonSchema in nonNullableOneOfSchemas)
-                {
-                    schema.OneOf.Add(jsonSchema);
-                    schema.Enumeration.Add(jsonSchema);
-                }
+            if (schema.Type == JsonObjectType.None)
                 return schema;
-            }
+            if (schema.Type == JsonObjectType.Object && schema.ActualDiscriminatorObject != null)
+                return schema;
+            
             // TODO: Method on JsonSchema4?
-            return nonNullableOneOfSchemas.FirstOrDefault() ?? schema;
+            return schema.OneOf.Where(o => !o.IsNullable(SchemaType.JsonSchema)).FirstOrDefault() ?? schema;
         }
 
         /// <summary>Gets the actual schema (i.e. when not referencing a type schema or it is inlined)
