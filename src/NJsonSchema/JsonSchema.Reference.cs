@@ -38,8 +38,8 @@ namespace NJsonSchema
                 }
 
                 var nonNullableOneOfSchemas =
-                    schema.OneOf.ToList().Where(o => !o.IsNullable(SchemaType.JsonSchema)).ToList();
-
+                    schema._oneOf.ToList().Where(o => !o.IsNullable(SchemaType.JsonSchema)).ToList();
+                
                 return nonNullableOneOfSchemas.Count == 1 
                     ? nonNullableOneOfSchemas.First().ActualSchema 
                     : ActualSchema;
