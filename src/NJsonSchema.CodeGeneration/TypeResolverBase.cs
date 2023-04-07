@@ -122,13 +122,13 @@ namespace NJsonSchema.CodeGeneration
         /// <returns>The actually resolvable schema</returns>
         public virtual JsonSchema RemoveNullability(JsonSchema schema)
         {
-            if (schema.Type == JsonObjectType.None)
+            if (schema.Type == JsonObjectType.None && schema.IsEnumeration)
                 return schema;
             if (schema.Type == JsonObjectType.Object && schema.ActualDiscriminatorObject != null)
                 return schema;
             
             // TODO: Method on JsonSchema4?
-            return schema.OneOf.Where(o => !o.IsNullable(SchemaType.JsonSchema)).FirstOrDefault() ?? schema;
+            return schema.OneOf.FirstOrDefault(o => !o.IsNullable(SchemaType.JsonSchema)) ?? schema;
         }
 
         /// <summary>Gets the actual schema (i.e. when not referencing a type schema or it is inlined)
