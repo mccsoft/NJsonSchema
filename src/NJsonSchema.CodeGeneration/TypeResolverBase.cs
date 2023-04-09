@@ -111,7 +111,7 @@ namespace NJsonSchema.CodeGeneration
                         
                         var newSchema = new JsonSchema();
                         newSchema.AllOf.Add(pair.Value);
-                        newSchema.AllOf.Add(schema);
+                        newSchema.AllOf.Add(childSchema);
                         definitions[childSchemaName] = newSchema;
                     }
                     schema.OneOf.Clear();
