@@ -40,7 +40,8 @@ namespace NJsonSchema.CodeGeneration.TypeScript.Models
             ClassName = typeName;
             Properties = _schema.ActualProperties.Values
                 .Where(v => settings.TypeStyle == TypeScriptTypeStyle.Interface ||
-                            v.IsInheritanceDiscriminator == false)
+                            v.IsInheritanceDiscriminator == false || 
+                            (v.IsInheritanceDiscriminator && v.Name.ToLowerInvariant() != "discriminator"))
                 .Select(property => new PropertyModel(this, property, ClassName, _resolver, _settings))
                 .ToList();
         }

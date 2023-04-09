@@ -69,50 +69,52 @@ namespace NJsonSchema.CodeGeneration
         {
             if (definitions != null)
             {
+                ProcessOneOfInheritance(definitions);
+                
                 foreach (var pair in definitions)
                 {
                     var schema = pair.Value.ActualSchema;
 
                     if (IsDefinitionTypeSchema(schema))
                     {
-                        var nonNullableOneOfSchemas = schema.OneOf.Where(o => !o.IsNullable(SchemaType.JsonSchema)).ToList();
-                        
-                        // support for multiple type definitions via enumerations
-                        if (nonNullableOneOfSchemas.Count > 1 && schema.Type == JsonObjectType.None)
-                        {
-                            foreach (var jsonSchema in schema.OneOf)
-                            {
-                                schema.Enumeration.Add(jsonSchema);
-                            }
-                        }
-
-                        // handle one-of inheritance
-                        if (schema.ActualDiscriminatorObject != null && schema.OneOf.Any())
-                        {
-                            var newSchema = new JsonSchema
-                            {
-                            };
-                            
-                            foreach (var mapping in schema.ActualDiscriminatorObject.Mapping)
-                            {
-                                JsonSchema parentSchema = mapping.Value.ActualSchema;
-                                newSchema.AllOf.Add(parentSchema);
-                                parentSchema.Discriminator ??= schema.ActualDiscriminatorObject.PropertyName;
-
-                                parentSchema.DiscriminatorObject ??= new OpenApiDiscriminator()
-                                {
-                                    PropertyName = schema.ActualDiscriminatorObject.PropertyName,
-                                };
-                                parentSchema.DiscriminatorObject.Mapping.Add(mapping.Key, newSchema);
-                            }
-                            newSchema.AllOf.Add(schema);
-                            GetOrGenerateTypeName(newSchema, pair.Key);
-                        }
-                        else
-                        {
-                            GetOrGenerateTypeName(schema, pair.Key);
-                        }
+                        GetOrGenerateTypeName(schema, pair.Key);
                     }
+                }
+            }
+        }
+
+        private void ProcessOneOfInheritance(IDictionary<string, JsonSchema> definitions)
+        {
+            foreach (var pair in definitions.ToList())
+            {
+                var schema = pair.Value.ActualSchema;
+
+                var nonNullableOneOfSchemas = schema.OneOf.Where(o => !o.IsNullable(SchemaType.JsonSchema)).ToList();
+                // support for multiple type definitions via enumerations
+                if (nonNullableOneOfSchemas.Count > 1 && schema.Type == JsonObjectType.None)
+                {
+                    foreach (var jsonSchema in schema.OneOf)
+                    {
+                        schema.Enumeration.Add(jsonSchema);
+                    }
+                    continue;
+                }
+
+                // handle one-of inheritance
+                if (schema.ActualDiscriminatorObject != null && schema.OneOf.Any())
+                {
+                    foreach (var mapping in schema.ActualDiscriminatorObject.Mapping)
+                    {
+                        JsonSchema childSchema = mapping.Value.ActualSchema;
+                        var childSchemaName =
+                            definitions.FirstOrDefault(x => x.Value == childSchema).Key;
+                        
+                        var newSchema = new JsonSchema();
+                        newSchema.AllOf.Add(pair.Value);
+                        newSchema.AllOf.Add(schema);
+                        definitions[childSchemaName] = newSchema;
+                    }
+                    schema.OneOf.Clear();
                 }
             }
         }
