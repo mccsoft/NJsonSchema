@@ -108,7 +108,13 @@ namespace NJsonSchema.CodeGeneration
                         JsonSchema childSchema = mapping.Value.ActualSchema;
                         var childSchemaName =
                             definitions.FirstOrDefault(x => x.Value == childSchema).Key;
-                        
+                        if (childSchemaName == null)
+                        {
+                            // this means, that some Schema is in `oneOf` section of 2 other schemas.
+                            childSchemaName =
+                                definitions.FirstOrDefault(x => x.Value.AllOf.Contains(childSchema)).Key;
+                            childSchemaName = childSchemaName + "_" + pair.Key;
+                        } 
                         var newSchema = new JsonSchema();
                         newSchema.AllOf.Add(pair.Value);
                         newSchema.AllOf.Add(childSchema);
