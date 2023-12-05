@@ -46,7 +46,8 @@ namespace NJsonSchema.References
         IJsonReference IJsonReferenceBase.Reference
         {
             get => Reference;
-            set => Reference = (T)value;
+            // fixes atlas openapi parsing
+            set => Reference = value as T;
         }
     }
 }
