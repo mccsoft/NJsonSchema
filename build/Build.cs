@@ -4,14 +4,15 @@ using System.Runtime.InteropServices;
 using System.Xml.Linq;
 using Nuke.Common;
 using Nuke.Common.CI;
+using Nuke.Common.CI.GitHubActions;
 using Nuke.Common.Git;
 using Nuke.Common.IO;
 using Nuke.Common.ProjectModel;
 using Nuke.Common.Tooling;
 using Nuke.Common.Tools.DotNet;
+using Nuke.Common.Tools.Npm;
+using Nuke.Common.Utilities;
 using Nuke.Common.Utilities.Collections;
-
-using static Nuke.Common.Logger;
 using static Nuke.Common.Tools.DotNet.DotNetTasks;
 
 [ShutdownDotNetAfterServerBuild]
@@ -30,7 +31,7 @@ partial class Build : NukeBuild
     [Parameter("Configuration to build - Default is 'Debug' (local) or 'Release' (server)")]
     readonly Configuration Configuration = IsLocalBuild ? Configuration.Debug : Configuration.Release;
 
-    [Solution] readonly Solution Solution;
+    [Solution(GenerateProjects = true)] readonly Solution Solution;
     [GitRepository] readonly GitRepository GitRepository;
 
     AbsolutePath SourceDirectory => RootDirectory / "src";
@@ -83,7 +84,7 @@ partial class Build : NukeBuild
             VersionSuffix = $"dev-{DateTime.UtcNow:yyyyMMdd-HHmm}";
         }
 
-        using var _ = Block("BUILD SETUP");
+        Serilog.Log.Information("BUILD SETUP");
         Serilog.Log.Information("Configuration:\t {Configuration}" , Configuration);
         Serilog.Log.Information("Version prefix:\t {VersionPrefix}" , VersionPrefix);
         Serilog.Log.Information("Version suffix:\t {VersionSuffix}" , VersionSuffix);
@@ -102,7 +103,21 @@ partial class Build : NukeBuild
         .Executes(() =>
         {
             DotNetRestore(s => s
-                .SetProjectFile(Solution));
+                .SetProjectFile(Solution)
+            );
+
+            if (IsServerBuild)
+            {
+                NpmTasks.NpmCi(_ => _
+                    .SetProcessWorkingDirectory(Solution._2_CodeGeneration.NJsonSchema_CodeGeneration_TypeScript_Tests.Directory)
+                );
+            }
+            else
+            {
+                NpmTasks.NpmInstall(_ => _
+                    .SetProcessWorkingDirectory(Solution._2_CodeGeneration.NJsonSchema_CodeGeneration_TypeScript_Tests.Directory)
+                );
+            }
         });
 
     Target Compile => _ => _
@@ -118,24 +133,23 @@ partial class Build : NukeBuild
                 .EnableNoRestore()
                 .SetDeterministic(IsServerBuild)
                 .SetContinuousIntegrationBuild(IsServerBuild)
+                // ensure we don't generate too much output in CI run
+                // 0  Turns off emission of all warning messages
+                // 1  Displays severe warning messages
+                .SetWarningLevel(IsServerBuild ? 0 : 1)
             );
         });
 
     Target Test => _ => _
-        .After(Compile)
+        .DependsOn(Compile)
         .Executes(() =>
         {
-            var framework = "";
-            if (!IsRunningOnWindows)
-            {
-                framework = "net8.0";
-            }
-
             DotNetTest(s => s
                 .SetProjectFile(Solution)
                 .SetConfiguration(Configuration)
                 .EnableNoRestore()
-                .SetFramework(framework)
+                .EnableNoBuild()
+                .When(GitHubActions.Instance is not null, x => x.SetLoggers("GitHubActions"))
             );
         });
 
