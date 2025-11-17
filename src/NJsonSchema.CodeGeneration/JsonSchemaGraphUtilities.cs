@@ -6,7 +6,6 @@
 // <author>Rico Suter, mail@rsuter.com</author>
 //-----------------------------------------------------------------------
 
-using System.Collections.Generic;
 using NJsonSchema.Visitors;
 
 namespace NJsonSchema.CodeGeneration
@@ -18,7 +17,7 @@ namespace NJsonSchema.CodeGeneration
         /// <param name="schema">The schema.</param>
         /// <param name="rootObject">The root object.</param>
         /// <returns></returns>
-        public static IDictionary<JsonSchema, string> GetDerivedSchemas(this JsonSchema schema, object rootObject)
+        public static IDictionary<JsonSchema, string?> GetDerivedSchemas(this JsonSchema schema, object rootObject)
         {
             var visitor = new DerivedSchemaVisitor(schema);
             visitor.Visit(rootObject);
@@ -29,14 +28,14 @@ namespace NJsonSchema.CodeGeneration
         {
             private readonly JsonSchema _baseSchema;
 
-            public Dictionary<JsonSchema, string> DerivedSchemas { get; } = new Dictionary<JsonSchema, string>();
+            public Dictionary<JsonSchema, string?> DerivedSchemas { get; } = [];
 
             public DerivedSchemaVisitor(JsonSchema baseSchema)
             {
                 _baseSchema = baseSchema;
             }
 
-            protected override JsonSchema VisitSchema(JsonSchema schema, string path, string typeNameHint)
+            protected override JsonSchema VisitSchema(JsonSchema schema, string path, string? typeNameHint)
             {
                 if (schema.Inherits(_baseSchema) && _baseSchema != schema)
                 {

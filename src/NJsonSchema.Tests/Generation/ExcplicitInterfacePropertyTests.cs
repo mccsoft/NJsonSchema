@@ -1,6 +1,5 @@
-﻿using System.Threading.Tasks;
-using Newtonsoft.Json;
-using Xunit;
+﻿using Newtonsoft.Json;
+using NJsonSchema.NewtonsoftJson.Generation;
 
 namespace NJsonSchema.Tests.Generation
 {
@@ -21,27 +20,27 @@ namespace NJsonSchema.Tests.Generation
         [Fact]
         public void When_a_property_is_explicit_interface_then_it_is_not_serialized()
         {
-            //// Arrange
+            // Arrange
             var foo = new Foo();
             ((IFoo)foo).Prop = "foobar";
 
-            //// Act
+            // Act
             var json = JsonConvert.SerializeObject(foo);
 
-            //// Assert
+            // Assert
             Assert.Equal(@"{""MyProp"":null}", json);
         }
 
         [Fact]
         public async Task When_a_property_is_explicit_interface_then_it_is_not_added_to_schema()
         {
-            //// Arrange
+            // Arrange
 
-            //// Act
-            var schema = JsonSchema.FromType<Foo>();
+            // Act
+            var schema = NewtonsoftJsonSchemaGenerator.FromType<Foo>();
 
-            //// Assert
-            Assert.Equal(1, schema.Properties.Count);
+            // Assert
+            Assert.Single(schema.Properties);
         }
     }
 }

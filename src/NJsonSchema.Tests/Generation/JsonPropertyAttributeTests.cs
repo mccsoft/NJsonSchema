@@ -1,6 +1,6 @@
-using System.Threading.Tasks;
 using Newtonsoft.Json;
-using Xunit;
+using Newtonsoft.Json.Serialization;
+using NJsonSchema.NewtonsoftJson.Generation;
 
 namespace NJsonSchema.Tests.Generation
 {
@@ -9,64 +9,71 @@ namespace NJsonSchema.Tests.Generation
         [Fact]
         public async Task When_name_of_JsonPropertyAttribute_is_set_then_it_is_used_as_json_property_name()
         {
-            //// Arrange
-            var schema = JsonSchema.FromType<JsonPropertyAttributeTests.MyJsonPropertyTestClass>();
+            // Arrange
+            var schema = NewtonsoftJsonSchemaGenerator.FromType<MyJsonPropertyTestClass>();
 
-            //// Act
+            // Act
             var property = schema.Properties["NewName"];
 
-            //// Assert
+            // Assert
             Assert.Equal("NewName", property.Name);
         }
 
         [Fact]
         public async Task When_name_of_JsonPropertyAttribute_is_set_then_it_is_used_as_json_property_name_even_with_contactresolver_that_has_nameing_strategy()
         {
-            var settings = new NJsonSchema.Generation.JsonSchemaGeneratorSettings();
-            settings.SerializerSettings = new JsonSerializerSettings
+            var settings = new NewtonsoftJsonSchemaGeneratorSettings
             {
-                ContractResolver = new Newtonsoft.Json.Serialization.DefaultContractResolver
+                SerializerSettings = new JsonSerializerSettings
                 {
-                    NamingStrategy = new Newtonsoft.Json.Serialization.CamelCaseNamingStrategy()
+                    ContractResolver = new DefaultContractResolver
+                    {
+                        NamingStrategy = new CamelCaseNamingStrategy()
+                    }
                 }
             };
 
-            //// Arrange
-            var schema = JsonSchema.FromType<JsonPropertyAttributeTests.MyJsonPropertyTestClass>(settings);
+            // Arrange
+            var schema = NewtonsoftJsonSchemaGenerator.FromType<MyJsonPropertyTestClass>(settings);
 
-            //// Act
+            // Act
             var property = schema.Properties["NewName"];
 
-            //// Assert
+            // Assert
             Assert.Equal("NewName", property.Name);
         }
 
         [Fact]
         public async Task Use_JsonSchemaGeneratorSettings_ContractResolver_For_JsonPropertyName()
         {
-            var settings = new NJsonSchema.Generation.JsonSchemaGeneratorSettings();
-            settings.ContractResolver = new Newtonsoft.Json.Serialization.CamelCasePropertyNamesContractResolver();
+            var settings = new NewtonsoftJsonSchemaGeneratorSettings
+            {
+                SerializerSettings =
+                {
+                    ContractResolver = new CamelCasePropertyNamesContractResolver()
+                }
+            };
 
-            //// Arrange
-            var schema = JsonSchema.FromType<JsonPropertyAttributeTests.MyJsonPropertyTestClass>(settings);
+            // Arrange
+            var schema = NewtonsoftJsonSchemaGenerator.FromType<MyJsonPropertyTestClass>(settings);
 
-            //// Act
+            // Act
             var property = schema.Properties["newName"];
 
-            //// Assert
+            // Assert
             Assert.Equal("newName", property.Name);
         }
 
         [Fact]
         public async Task When_required_is_always_in_JsonPropertyAttribute_then_the_property_is_required()
         {
-            //// Arrange
-            var schema = JsonSchema.FromType<JsonPropertyAttributeTests.MyJsonPropertyTestClass>();
+            // Arrange
+            var schema = NewtonsoftJsonSchemaGenerator.FromType<MyJsonPropertyTestClass>();
 
-            //// Act
+            // Act
             var property = schema.Properties["Required"];
 
-            //// Assert
+            // Assert
             Assert.True(property.IsRequired);
         }
 

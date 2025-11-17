@@ -1,25 +1,17 @@
-﻿using NJsonSchema.Validation.FormatValidators;
-using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Linq;
+using NJsonSchema.Validation.FormatValidators;
 
 namespace NJsonSchema.Validation
 {
     /// <summary>Class to configure the behavior of <see cref="JsonSchemaValidator"/>. </summary>
     public class JsonSchemaValidatorSettings
     {
-        private StringComparer _propertyStringComparer;
-
         /// <summary>Gets or sets the <see cref="StringComparer"/> used to compare object properties.</summary>
-        public StringComparer PropertyStringComparer
-        {
-            get => _propertyStringComparer ?? StringComparer.Ordinal;
-            set => _propertyStringComparer = value;
-        }
+        public StringComparer PropertyStringComparer { get; set; } = StringComparer.Ordinal;
 
         /// <summary>Gets or sets the format validators.</summary>
-        public IEnumerable<IFormatValidator> FormatValidators { get; set; } = new IFormatValidator[]
-        {
+        public IEnumerable<IFormatValidator> FormatValidators { get; set; } =
+        [
             new DateTimeFormatValidator(),
             new DateFormatValidator(),
             new EmailFormatValidator(),
@@ -33,7 +25,7 @@ namespace NJsonSchema.Validation
             new ByteFormatValidator(),
             new Base64FormatValidator(),
             new UuidFormatValidator()
-        };
+        ];
 
         /// <summary>
         /// Adds a custom format validator to the <see cref="FormatValidators"/> array.
@@ -43,7 +35,7 @@ namespace NJsonSchema.Validation
         {
             FormatValidators = this
                 .FormatValidators
-                .Union(new[] { formatValidator })
+                .Union([formatValidator])
                 .ToArray();
         }
     }

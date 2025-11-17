@@ -1,6 +1,5 @@
-﻿using System.Threading.Tasks;
-using NJsonSchema.Generation;
-using Xunit;
+﻿using NJsonSchema.CodeGeneration.Tests;
+using NJsonSchema.NewtonsoftJson.Generation;
 
 namespace NJsonSchema.CodeGeneration.CSharp.Tests
 {
@@ -21,10 +20,10 @@ namespace NJsonSchema.CodeGeneration.CSharp.Tests
         [Fact]
         public async Task When_interface_has_properties_then_properties_are_included_in_schema()
         {
-            //// Arrange
-            var schema = JsonSchema.FromType<Person>(new JsonSchemaGeneratorSettings());
+            // Arrange
+            var schema = NewtonsoftJsonSchemaGenerator.FromType<Person>(new NewtonsoftJsonSchemaGeneratorSettings());
 
-            //// Act
+            // Act
             var generator = new CSharpGenerator(schema, new CSharpGeneratorSettings
             {
                 ClassStyle = CSharpClassStyle.Poco,
@@ -32,19 +31,19 @@ namespace NJsonSchema.CodeGeneration.CSharp.Tests
             });
             var code = generator.GenerateFile("Person");
 
-            //// Assert
+            // Assert
             Assert.Equal(2, schema.Properties.Count);
-            Assert.Contains("public string LastName { get; set; }\n", code);
-            Assert.Contains("public string FirstName { get; set; }\n", code);
+            await VerifyHelper.Verify(code);
+            CSharpCompiler.AssertCompile(code);
         }
 
         [Fact]
         public async Task When_class_implements_interface_then_properties_are_included_in_schema()
         {
-            //// Arrange
-            var schema = JsonSchema.FromType<Person>(new JsonSchemaGeneratorSettings());
+            // Arrange
+            var schema = NewtonsoftJsonSchemaGenerator.FromType<Person>(new NewtonsoftJsonSchemaGeneratorSettings());
 
-            //// Act
+            // Act
             var generator = new CSharpGenerator(schema, new CSharpGeneratorSettings
             {
                 ClassStyle = CSharpClassStyle.Poco,
@@ -52,10 +51,10 @@ namespace NJsonSchema.CodeGeneration.CSharp.Tests
             });
             var code = generator.GenerateFile("Person");
 
-            //// Assert
+            // Assert
             Assert.Equal(2, schema.Properties.Count);
-            Assert.Contains("public string LastName { get; set; }\n", code);
-            Assert.Contains("public string FirstName { get; set; }\n", code);
+            await VerifyHelper.Verify(code);
+            CSharpCompiler.AssertCompile(code);
         }
     }
 

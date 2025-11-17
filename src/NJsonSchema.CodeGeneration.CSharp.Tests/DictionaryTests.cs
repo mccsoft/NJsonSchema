@@ -1,7 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using NJsonSchema.NewtonsoftJson.Generation;
 using System.ComponentModel.DataAnnotations;
-using System.Threading.Tasks;
-using Xunit;
+using NJsonSchema.CodeGeneration.Tests;
 
 namespace NJsonSchema.CodeGeneration.CSharp.Tests
 {
@@ -24,27 +23,27 @@ namespace NJsonSchema.CodeGeneration.CSharp.Tests
         [Fact]
         public async Task When_dictionary_key_is_enum_then_csharp_has_enum_key()
         {
-            //// Arrange
-            var schema = JsonSchema.FromType<EnumKeyDictionaryTest>();
+            // Arrange
+            var schema = NewtonsoftJsonSchemaGenerator.FromType<EnumKeyDictionaryTest>();
             var data = schema.ToJson();
 
-            //// Act
+            // Act
             var generator = new CSharpGenerator(schema, new CSharpGeneratorSettings());
             var code = generator.GenerateFile("MyClass");
 
-            //// Assert
-            Assert.Contains("public System.Collections.Generic.IDictionary<PropertyName, string> EnumDictionary ", code);
-            Assert.Contains("public System.Collections.Generic.IDictionary<PropertyName, string> EnumInterfaceDictionary ", code);
+            // Assert
+            await VerifyHelper.Verify(code);
+            CSharpCompiler.AssertCompile(code);
         }
 
         [Fact]
         public async Task When_dictionary_property_is_required_then_dictionary_instance_can_be_changed()
         {
-            //// Arrange
-            var schema = JsonSchema.FromType<EnumKeyDictionaryTest>();
+            // Arrange
+            var schema = NewtonsoftJsonSchemaGenerator.FromType<EnumKeyDictionaryTest>();
             var data = schema.ToJson();
 
-            //// Act
+            // Act
             var generator = new CSharpGenerator(schema, new CSharpGeneratorSettings
             {
                 ClassStyle = CSharpClassStyle.Poco,
@@ -53,8 +52,8 @@ namespace NJsonSchema.CodeGeneration.CSharp.Tests
             });
             var code = generator.GenerateFile("MyClass");
 
-            //// Assert
-            Assert.Contains("public Foo<PropertyName, string> EnumInterfaceDictionary { get; set; } = new Bar<PropertyName, string>();", code);
+            // Assert
+            await VerifyHelper.Verify(code);
         }
     }
 }

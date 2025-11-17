@@ -7,7 +7,6 @@
 //-----------------------------------------------------------------------
 
 using Newtonsoft.Json.Linq;
-using System;
 
 namespace NJsonSchema.Validation.FormatValidators
 {
@@ -26,8 +25,8 @@ namespace NJsonSchema.Validation.FormatValidators
         /// <returns>True if value is correct for given format, False - if not.</returns>
         public bool IsValid(string value, JTokenType tokenType)
         {
-            return tokenType == JTokenType.Uri
-                || Uri.TryCreate(value, UriKind.Absolute, out Uri uriResult);
+            return tokenType == JTokenType.Uri || 
+                Uri.TryCreate(value, UriKind.Absolute, out Uri? _);
         }
     }
 }

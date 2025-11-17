@@ -1,5 +1,4 @@
-﻿using System.Threading.Tasks;
-using Xunit;
+﻿using NJsonSchema.NewtonsoftJson.Generation;
 
 namespace NJsonSchema.Tests.Generation
 {
@@ -13,11 +12,11 @@ namespace NJsonSchema.Tests.Generation
         [Fact]
         public async Task When_class_is_abstract_then_is_abstract_is_true()
         {
-            /// Act
-            var schema = JsonSchema.FromType<AbstractClass>();
+            // Act
+            var schema = NewtonsoftJsonSchemaGenerator.FromType<AbstractClass>();
             var json = schema.ToJson();
 
-            /// Assert
+            // Assert
             Assert.Contains("x-abstract", json);
             Assert.True(schema.IsAbstract);
         }
@@ -30,11 +29,11 @@ namespace NJsonSchema.Tests.Generation
         [Fact]
         public async Task When_class_is_not_abstract_then_is_abstract_is_false()
         {
-            /// Act
-            var schema = JsonSchema.FromType<NotAbstractClass>();
+            // Act
+            var schema = NewtonsoftJsonSchemaGenerator.FromType<NotAbstractClass>();
             var json = schema.ToJson();
 
-            /// Assert
+            // Assert
             Assert.DoesNotContain("x-abstract", json);
             Assert.False(schema.IsAbstract);
         }

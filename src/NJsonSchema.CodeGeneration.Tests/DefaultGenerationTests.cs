@@ -1,8 +1,7 @@
 using System.ComponentModel;
-using System.Threading.Tasks;
 using NJsonSchema.CodeGeneration.CSharp;
-using NJsonSchema.Generation;
-using Xunit;
+using NJsonSchema.CodeGeneration.CSharp.Tests;
+using NJsonSchema.NewtonsoftJson.Generation;
 
 namespace NJsonSchema.CodeGeneration.Tests
 {
@@ -17,52 +16,44 @@ namespace NJsonSchema.CodeGeneration.Tests
         [Fact]
         public async Task When_property_has_default_attribute_then_default_is_in_schema()
         {
-            //// Arrange
+            // Arrange
             
-            //// Act
-            var schema = JsonSchema.FromType<DefaultPropertyGenerationClass>(new JsonSchemaGeneratorSettings
-            {
-                DefaultEnumHandling = EnumHandling.Integer
-            });
+            // Act
+            var schema = NewtonsoftJsonSchemaGenerator.FromType<DefaultPropertyGenerationClass>(new NewtonsoftJsonSchemaGeneratorSettings());
 
-            //// Assert
+            // Assert
             Assert.Equal("foo", schema.Properties["Test"].Default); 
         }
 
         [Fact]
         public async Task When_property_has_default_attribute_then_default_value_is_set_in_generated_INPC_CSharp_code()
         {
-            //// Arrange
-            var schema = JsonSchema.FromType<DefaultPropertyGenerationClass>(new JsonSchemaGeneratorSettings
-            {
-                DefaultEnumHandling = EnumHandling.Integer
-            });
+            // Arrange
+            var schema = NewtonsoftJsonSchemaGenerator.FromType<DefaultPropertyGenerationClass>(new NewtonsoftJsonSchemaGeneratorSettings());
 
-            //// Act
+            // Act
             var generator = new CSharpGenerator(schema);
             generator.Settings.ClassStyle = CSharpClassStyle.Inpc;
             var code = generator.GenerateFile("MyClass");
 
-            //// Assert
+            // Assert
             Assert.Contains("private string _test = \"foo\";", code);
         }
 
         [Fact]
         public async Task When_property_has_default_attribute_then_default_value_is_set_in_generated_Poco_CSharp_code()
         {
-            //// Arrange
-            var schema = JsonSchema.FromType<DefaultPropertyGenerationClass>(new JsonSchemaGeneratorSettings
-            {
-                DefaultEnumHandling = EnumHandling.Integer
-            });
+            // Arrange
+            var schema = NewtonsoftJsonSchemaGenerator.FromType<DefaultPropertyGenerationClass>(new NewtonsoftJsonSchemaGeneratorSettings());
 
-            //// Act
+            // Act
             var generator = new CSharpGenerator(schema);
             generator.Settings.ClassStyle = CSharpClassStyle.Poco;
             var code = generator.GenerateFile("MyClass");
 
-            //// Assert
-            Assert.Contains("public string Test { get; set; } = \"foo\";", code);
+            // Assert
+            await VerifyHelper.Verify(code);
+            CSharpCompiler.AssertCompile(code);
         }
     }
 }

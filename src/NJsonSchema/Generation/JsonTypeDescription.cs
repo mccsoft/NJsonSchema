@@ -6,10 +6,7 @@
 // <author>Rico Suter, mail@rsuter.com</author>
 //-----------------------------------------------------------------------
 
-using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using Namotion.Reflection;
 using NJsonSchema.Generation.TypeMappers;
 
@@ -31,7 +28,7 @@ namespace NJsonSchema.Generation
         /// <param name="isNullable">Specifies whether the type is nullable.</param>
         /// <param name="format">The format string (may be null).</param>
         /// <returns>The description.</returns>
-        public static JsonTypeDescription Create(ContextualType type, JsonObjectType jsonType, bool isNullable, string format)
+        public static JsonTypeDescription Create(ContextualType type, JsonObjectType jsonType, bool isNullable, string? format)
         {
             return new JsonTypeDescription(type, jsonType, isNullable)
             {
@@ -78,7 +75,7 @@ namespace NJsonSchema.Generation
         public bool IsEnum { get; private set; }
 
         /// <summary>Gets the format string. </summary>
-        public string Format { get; private set; }
+        public string? Format { get; private set; }
 
         /// <summary>Gets or sets a value indicating whether the type is nullable.</summary>
         public bool IsNullable { get; set; }
@@ -89,12 +86,18 @@ namespace NJsonSchema.Generation
         /// <summary>Gets a value indicating whether this is an any type (e.g. object).</summary>
         public bool IsAny => Type == JsonObjectType.None;
 
-        /// <summary>Specifices whether the type requires a reference.</summary>
+        /// <summary>Specifies whether the type requires a reference.</summary>
         /// <param name="typeMappers">The type mappers.</param>
         /// <returns>true or false.</returns>
         public bool RequiresSchemaReference(IEnumerable<ITypeMapper> typeMappers)
         {
             var typeMapper = typeMappers.FirstOrDefault(m => m.MappedType == ContextualType.OriginalType);
+            if (typeMapper == null && ContextualType.OriginalType.IsGenericType)
+            {
+                var genericType = ContextualType.OriginalType.GetGenericTypeDefinition();
+                typeMapper = typeMappers.FirstOrDefault(m => m.MappedType == genericType);
+            }
+
             if (typeMapper != null)
             {
                 return typeMapper.UseReference;

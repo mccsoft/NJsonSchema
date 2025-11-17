@@ -1,8 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using NJsonSchema.Generation;
-using Xunit;
+﻿using NJsonSchema.Generation;
 using Namotion.Reflection;
+using NJsonSchema.NewtonsoftJson.Generation;
 
 namespace NJsonSchema.Tests.Generation
 {
@@ -11,7 +9,7 @@ namespace NJsonSchema.Tests.Generation
         [Fact]
         public void When_ReferenceTypeNullHandling_is_Null_then_nullability_is_correct()
         {
-            //// Arrange
+            // Arrange
             var checks = new Dictionary<Type, bool>
             {
                 { typeof(bool), false },
@@ -35,10 +33,10 @@ namespace NJsonSchema.Tests.Generation
                 { typeof(Dictionary<string, string>), true },
             };
 
-            //// Act
-            var svc = new DefaultReflectionService();
+            // Act
+            var svc = new NewtonsoftJsonReflectionService();
 
-            //// Assert
+            // Assert
             foreach (var check in checks)
             {
                 Assert.Equal(check.Value, svc.IsNullable(check.Key.ToContextualType(), ReferenceTypeNullHandling.Null));
@@ -48,7 +46,7 @@ namespace NJsonSchema.Tests.Generation
         [Fact]
         public void When_ReferenceTypeNullHandling_is_NotNull_then_nullability_is_correct()
         {
-            //// Arrange
+            // Arrange
             var checks = new Dictionary<Type, bool>
             {
                 { typeof(bool), false },
@@ -72,10 +70,10 @@ namespace NJsonSchema.Tests.Generation
                 { typeof(Dictionary<string, string>), false },
             };
 
-            //// Act
-            var svc = new DefaultReflectionService();
+            // Act
+            var svc = new NewtonsoftJsonReflectionService();
 
-            //// Assert
+            // Assert
             foreach (var check in checks)
             {
                 Assert.Equal(check.Value, svc.IsNullable(check.Key.ToContextualType(), ReferenceTypeNullHandling.NotNull));

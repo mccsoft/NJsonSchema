@@ -6,7 +6,6 @@
 // <author>Rico Suter, mail@rsuter.com</author>
 //-----------------------------------------------------------------------
 
-using System.Collections.Generic;
 using System.Linq;
 using NJsonSchema.CodeGeneration.Models;
 
@@ -40,7 +39,7 @@ namespace NJsonSchema.CodeGeneration.TypeScript.Models
             ClassName = typeName;
             Properties = _schema.ActualProperties.Values
                 .Where(v => settings.TypeStyle == TypeScriptTypeStyle.Interface ||
-                            v.IsInheritanceDiscriminator == false || 
+                            !v.IsInheritanceDiscriminator || 
                             (v.IsInheritanceDiscriminator && v.Name.ToLowerInvariant() != "discriminator"))
                 .Select(property => new PropertyModel(this, property, ClassName, _resolver, _settings))
                 .ToList();
@@ -51,7 +50,7 @@ namespace NJsonSchema.CodeGeneration.TypeScript.Models
 
         /// <summary>Gets the name for the discriminator check.</summary>
         public string DiscriminatorName => HasBaseDiscriminator ?
-            (_schema.ResponsibleDiscriminatorObject.Mapping.FirstOrDefault(m => m.Value.ActualTypeSchema == _schema.ActualTypeSchema).Key ?? _discriminatorName) :
+            (_schema.ResponsibleDiscriminatorObject!.Mapping.FirstOrDefault(m => m.Value.ActualTypeSchema == _schema.ActualTypeSchema).Key ?? _discriminatorName) :
             _discriminatorName;
 
         /// <summary>Gets a value indicating whether the class has a discriminator property.</summary>
@@ -61,10 +60,10 @@ namespace NJsonSchema.CodeGeneration.TypeScript.Models
         public bool HasBaseDiscriminator => _schema.ResponsibleDiscriminatorObject != null;
 
         /// <summary>Gets the class discriminator property name (may be defined in a inherited class).</summary>
-        public string BaseDiscriminator => _schema.ResponsibleDiscriminatorObject?.PropertyName;
+        public string? BaseDiscriminator => _schema.ResponsibleDiscriminatorObject?.PropertyName;
 
         /// <summary>Gets a value indicating whether the class has description.</summary>
-        public bool HasDescription => !(_schema is JsonSchemaProperty) &&
+        public bool HasDescription => _schema is not JsonSchemaProperty &&
             (!string.IsNullOrEmpty(_schema.Description) ||
              !string.IsNullOrEmpty(_schema.ActualTypeSchema.Description));
 
@@ -96,7 +95,7 @@ namespace NJsonSchema.CodeGeneration.TypeScript.Models
         public string InterfaceInheritance => HasInheritance ? " extends I" + BaseClass : string.Empty;
 
         /// <summary>Gets the base class name.</summary>
-        public string BaseClass => HasInheritance ? _resolver.Resolve(InheritedSchema, true, string.Empty) : null;
+        public string? BaseClass => HasInheritance ? _resolver.Resolve(InheritedSchema!, true, string.Empty) : null;
 
         /// <summary>Gets or sets a value indicating whether a clone() method should be generated in the DTO classes.</summary>
         public bool GenerateCloneMethod => _settings.GenerateCloneMethod;
@@ -105,7 +104,7 @@ namespace NJsonSchema.CodeGeneration.TypeScript.Models
         public bool GenerateConstructorInterface => _settings.GenerateConstructorInterface;
 
         /// <summary>Gets or sets a value indicating whether POJO objects in the constructor data are converted to DTO instances (default: true).</summary>
-        public bool ConvertConstructorInterfaceData => _settings.ConvertConstructorInterfaceData && Properties.Any(p => p.SupportsConstructorConversion);
+        public bool ConvertConstructorInterfaceData => _settings.ConvertConstructorInterfaceData && Properties.Exists(p => p.SupportsConstructorConversion);
 
         /// <summary>Gets the null value.</summary>
         public string NullValue => _settings.NullValue.ToString().ToLowerInvariant();
@@ -135,19 +134,13 @@ namespace NJsonSchema.CodeGeneration.TypeScript.Models
         public bool HandleReferences => _settings.HandleReferences;
 
         /// <summary>Gets a value indicating whether the type has properties.</summary>
-        public bool HasProperties => Properties.Any();
+        public bool HasProperties => Properties.Count > 0;
 
         /// <summary>Gets the property models.</summary>
         public List<PropertyModel> Properties { get; }
 
         /// <summary>Gets a value indicating whether any property has a default value.</summary>
-        public bool HasDefaultValues => Properties.Any(p => p.HasDefaultValue);
-
-        /// <summary>Gets a value indicating whether </summary>
-        public bool RequiresStrictPropertyInitialization => _settings.RequiresStrictPropertyInitialization;
-
-        /// <summary>Gets a value indicating whether </summary>
-        public bool SupportsOverrideKeyword => _settings.SupportsOverrideKeyword;
+        public bool HasDefaultValues => Properties.Exists(p => p.HasDefaultValue);
 
         /// <summary>Gets a value indicating whether the export keyword should be added to all classes.</summary>
         public bool ExportTypes => _settings.ExportTypes;
@@ -156,6 +149,6 @@ namespace NJsonSchema.CodeGeneration.TypeScript.Models
         public bool GenerateTypeCheckFunctions => _settings.GenerateTypeCheckFunctions;
 
         /// <summary>Gets the inherited schema.</summary>
-        private JsonSchema InheritedSchema => _schema.InheritedSchema?.ActualSchema;
+        private JsonSchema? InheritedSchema => _schema.InheritedSchema?.ActualSchema;
     }
 }

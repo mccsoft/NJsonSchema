@@ -4,15 +4,15 @@ using System.Runtime.InteropServices;
 using System.Xml.Linq;
 using Nuke.Common;
 using Nuke.Common.CI;
+using Nuke.Common.CI.GitHubActions;
 using Nuke.Common.Git;
 using Nuke.Common.IO;
 using Nuke.Common.ProjectModel;
 using Nuke.Common.Tooling;
 using Nuke.Common.Tools.DotNet;
+using Nuke.Common.Tools.Npm;
+using Nuke.Common.Utilities;
 using Nuke.Common.Utilities.Collections;
-
-using static Nuke.Common.IO.FileSystemTasks;
-using static Nuke.Common.Logger;
 using static Nuke.Common.Tools.DotNet.DotNetTasks;
 
 [ShutdownDotNetAfterServerBuild]
@@ -31,7 +31,7 @@ partial class Build : NukeBuild
     [Parameter("Configuration to build - Default is 'Debug' (local) or 'Release' (server)")]
     readonly Configuration Configuration = IsLocalBuild ? Configuration.Debug : Configuration.Release;
 
-    [Solution] readonly Solution Solution;
+    [Solution(GenerateProjects = true)] readonly Solution Solution;
     [GitRepository] readonly GitRepository GitRepository;
 
     AbsolutePath SourceDirectory => RootDirectory / "src";
@@ -50,13 +50,13 @@ partial class Build : NukeBuild
         if (!string.IsNullOrWhiteSpace(versionPrefix))
         {
             IsTaggedBuild = true;
-            Info($"Tag version {versionPrefix} from Git found, using it as version prefix");
+            Serilog.Log.Information("Tag version {VersionPrefix} from Git found, using it as version prefix", versionPrefix);
         }
         else
         {
-            var propsDocument = XDocument.Parse(TextTasks.ReadAllText(SourceDirectory / "Directory.Build.props"));
+            var propsDocument = XDocument.Parse((RootDirectory / "Directory.Build.props").ReadAllText());
             versionPrefix = propsDocument.Element("Project").Element("PropertyGroup").Element("VersionPrefix").Value;
-            Info($"Version prefix {versionPrefix} read from Directory.Build.props");
+            Serilog.Log.Information("Version prefix {VersionPrefix} read from Directory.Build.props", versionPrefix);
         }
 
         return versionPrefix;
@@ -66,35 +66,58 @@ partial class Build : NukeBuild
     {
         VersionPrefix = DetermineVersionPrefix();
 
-        VersionSuffix = !IsTaggedBuild
-            ? $"preview-{DateTime.UtcNow:yyyyMMdd-HHmm}"
-            : "";
+        var versionParts = VersionPrefix.Split('-');
+        if (versionParts.Length == 2)
+        {
+            VersionPrefix = versionParts[0];
+            VersionSuffix = versionParts[1];
+        }
+        else
+        {
+            VersionSuffix = !IsTaggedBuild
+                ? $"preview-{DateTime.UtcNow:yyyyMMdd-HHmm}"
+                : "";
+        }
 
         if (IsLocalBuild)
         {
             VersionSuffix = $"dev-{DateTime.UtcNow:yyyyMMdd-HHmm}";
         }
 
-        using var _ = Block("BUILD SETUP");
-        Info("Configuration:\t" + Configuration);
-        Info("Version prefix:\t" + VersionPrefix);
-        Info("Version suffix:\t" + VersionSuffix);
-        Info("Tagged build:\t" + IsTaggedBuild);
+        Serilog.Log.Information("BUILD SETUP");
+        Serilog.Log.Information("Configuration:\t {Configuration}" , Configuration);
+        Serilog.Log.Information("Version prefix:\t {VersionPrefix}" , VersionPrefix);
+        Serilog.Log.Information("Version suffix:\t {VersionSuffix}" , VersionSuffix);
+        Serilog.Log.Information("Tagged build:\t {IsTaggedBuild}" , IsTaggedBuild);
     }
 
     Target Clean => _ => _
         .Before(Restore)
         .Executes(() =>
         {
-            SourceDirectory.GlobDirectories("**/bin", "**/obj").ForEach(DeleteDirectory);
-            EnsureCleanDirectory(ArtifactsDirectory);
+            SourceDirectory.GlobDirectories("**/bin", "**/obj").ForEach(x => x.DeleteDirectory());
+            ArtifactsDirectory.CreateOrCleanDirectory();
         });
 
     Target Restore => _ => _
         .Executes(() =>
         {
             DotNetRestore(s => s
-                .SetProjectFile(Solution));
+                .SetProjectFile(Solution)
+            );
+
+            if (IsServerBuild)
+            {
+                NpmTasks.NpmCi(_ => _
+                    .SetProcessWorkingDirectory(Solution._2_CodeGeneration.NJsonSchema_CodeGeneration_TypeScript_Tests.Directory)
+                );
+            }
+            else
+            {
+                NpmTasks.NpmInstall(_ => _
+                    .SetProcessWorkingDirectory(Solution._2_CodeGeneration.NJsonSchema_CodeGeneration_TypeScript_Tests.Directory)
+                );
+            }
         });
 
     Target Compile => _ => _
@@ -110,24 +133,23 @@ partial class Build : NukeBuild
                 .EnableNoRestore()
                 .SetDeterministic(IsServerBuild)
                 .SetContinuousIntegrationBuild(IsServerBuild)
+                // ensure we don't generate too much output in CI run
+                // 0  Turns off emission of all warning messages
+                // 1  Displays severe warning messages
+                .SetWarningLevel(IsServerBuild ? 0 : 1)
             );
         });
 
     Target Test => _ => _
-        .After(Compile)
+        .DependsOn(Compile)
         .Executes(() =>
         {
-            var framework = "";
-            if (!IsRunningOnWindows)
-            {
-                framework = "net6.0";
-            }
-
             DotNetTest(s => s
                 .SetProjectFile(Solution)
                 .SetConfiguration(Configuration)
                 .EnableNoRestore()
-                .SetFramework(framework)
+                .EnableNoBuild()
+                .When(GitHubActions.Instance is not null, x => x.SetLoggers("GitHubActions"))
             );
         });
 
@@ -147,7 +169,7 @@ partial class Build : NukeBuild
                 nugetVersion += "-" + VersionSuffix;
             }
 
-            EnsureCleanDirectory(ArtifactsDirectory);
+            ArtifactsDirectory.CreateOrCleanDirectory();
 
             DotNetPack(s => s
                 .SetProcessWorkingDirectory(SourceDirectory)

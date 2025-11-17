@@ -12,15 +12,21 @@ namespace NJsonSchema.CodeGeneration.Models
     public class EnumerationItemModel
     {
         /// <summary>Gets or sets the name.</summary>
-        public string Name { get; set; }
+        public required string Name { get; set; }
+
+        /// <summary>Gets or sets the original name.</summary>
+        public required string OriginalName { get; set; }
 
         /// <summary>Gets or sets the value.</summary>
-        public string Value { get; set; }
+        public required string Value { get; set; }
+
+        /// <summary>Gets or sets the description.</summary>
+        public string? Description { get; set; }
 
         /// <summary>Gets or sets the internal value (e.g. the underlying/system value).</summary>
-        public string InternalValue { get; set; }
+        public string? InternalValue { get; set; }
 
         /// <summary>Gets or sets the internal flag value (e.g. the underlying/system value).</summary>
-        public string InternalFlagValue { get; set; }
+        public string? InternalFlagValue { get; set; }
     }
 }

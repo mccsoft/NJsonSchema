@@ -1,9 +1,6 @@
 ﻿using NJsonSchema.Annotations;
-using NJsonSchema.Generation;
-using System;
+using NJsonSchema.NewtonsoftJson.Generation;
 using System.Globalization;
-using System.Threading.Tasks;
-using Xunit;
 
 namespace NJsonSchema.Tests.Generation
 {
@@ -40,8 +37,8 @@ namespace NJsonSchema.Tests.Generation
         [Fact]
         public async Task When_class_has_property_with_JsonSchemaExtensionDataAttribute_on_property_then_extensiondata_schema_is_set_on_property_level()
         {
-            //// Act
-            var schema = JsonSchema.FromType<RootType>(new JsonSchemaGeneratorSettings { SchemaType = SchemaType.OpenApi3 });
+            // Act
+            var schema = NewtonsoftJsonSchemaGenerator.FromType<RootType>(new NewtonsoftJsonSchemaGeneratorSettings { SchemaType = SchemaType.OpenApi3 });
             var json = schema.ToJson();
 
             var expectedJSON = @"{
@@ -119,7 +116,7 @@ namespace NJsonSchema.Tests.Generation
               }
             }";
 
-            //// Assert generated JSON matches schema, ignores whitespace and spaces
+            // Assert generated JSON matches schema, ignores whitespace and spaces
             var result = String.Compare(json, expectedJSON, CultureInfo.CurrentCulture, CompareOptions.IgnoreCase | CompareOptions.IgnoreSymbols);
 
             Assert.Equal(0, result);
@@ -128,8 +125,8 @@ namespace NJsonSchema.Tests.Generation
         [Fact]
         public async Task When_class_has_property_with_JsonSchemaExtensionDataAttribute_on_property_then_extensiondata_is_set_to_property()
         {
-            //// Act
-            var schema = JsonSchema.FromType<ClassWithExtensionData>(new JsonSchemaGeneratorSettings
+            // Act
+            var schema = NewtonsoftJsonSchemaGenerator.FromType<ClassWithExtensionData>(new NewtonsoftJsonSchemaGeneratorSettings
             {
                 SchemaType = SchemaType.OpenApi3
             });
@@ -170,8 +167,8 @@ namespace NJsonSchema.Tests.Generation
                 }
             }";
 
-            //// Assert generated JSON matches schema, ignores whitespace and spaces
-            var result = String.Compare(json, expectedJSON, CultureInfo.CurrentCulture, CompareOptions.IgnoreCase | CompareOptions.IgnoreSymbols);
+            // Assert generated JSON matches schema, ignores whitespace and spaces
+            var result = string.Compare(json, expectedJSON, CultureInfo.CurrentCulture, CompareOptions.IgnoreCase | CompareOptions.IgnoreSymbols);
 
             Assert.Equal(0, result);
         }

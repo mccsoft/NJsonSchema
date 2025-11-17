@@ -25,5 +25,9 @@ src/packages/Newtonsoft.Json**
 _ReSharper.Caches
 /.nuke/temp
 /artifacts
-**/*.received.txt
-**/*.txt.bak
+
+node_modules
+
+# Verify
+*.received.*
+*.received/

@@ -6,8 +6,6 @@
 // <author>Rico Suter, mail@rsuter.com</author>
 //-----------------------------------------------------------------------
 
-using System.Threading;
-using System.Threading.Tasks;
 using NJsonSchema.References;
 
 namespace NJsonSchema.Visitors
@@ -21,7 +19,7 @@ namespace NJsonSchema.Visitors
         /// <param name="typeNameHint">The type name hint.</param>
         /// <param name="cancellationToken">The cancellation token</param>
         /// <returns>The task.</returns>
-        protected abstract Task<JsonSchema> VisitSchemaAsync(JsonSchema schema, string path, string typeNameHint, CancellationToken cancellationToken);
+        protected abstract Task<JsonSchema> VisitSchemaAsync(JsonSchema schema, string path, string? typeNameHint, CancellationToken cancellationToken);
 
         /// <summary>Called when a <see cref="IJsonReference"/> is visited.</summary>
         /// <param name="reference">The visited schema.</param>
@@ -29,7 +27,7 @@ namespace NJsonSchema.Visitors
         /// <param name="typeNameHint">The type name hint.</param>
         /// <param name="cancellationToken">The cancellation token</param>
         /// <returns>The task.</returns>
-        protected override async Task<IJsonReference> VisitJsonReferenceAsync(IJsonReference reference, string path, string typeNameHint, CancellationToken cancellationToken)
+        protected override async Task<IJsonReference> VisitJsonReferenceAsync(IJsonReference reference, string path, string? typeNameHint, CancellationToken cancellationToken)
         {
             if (reference is JsonSchema schema)
             {

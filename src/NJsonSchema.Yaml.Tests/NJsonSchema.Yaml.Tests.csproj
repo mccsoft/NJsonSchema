@@ -1,26 +1,32 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup>
-    <TargetFrameworks>net6.0;net461</TargetFrameworks>
-    <IsPackable>false</IsPackable>
-    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
-  </PropertyGroup>
-  <PropertyGroup>
-      <DocumentationFile>bin\Debug\$(TargetFramework)\NJsonSchema.Yaml.Tests.xml</DocumentationFile>
-  </PropertyGroup>
-  <ItemGroup>
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.0.0" />
-    <PackageReference Include="NSwag.Core.Yaml" Version="13.20.0" />
-    <PackageReference Include="xunit" Version="2.4.1" />
-    <PackageReference Include="xunit.runner.visualstudio" Version="2.4.3" PrivateAssets="all" />
-    <DotNetCliToolReference Include="dotnet-xunit" Version="2.3.1" />
-    <PackageReference Include="NodaTime" Version="3.1.9" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\NJsonSchema\NJsonSchema.csproj" />
-    <ProjectReference Include="..\NJsonSchema.Yaml\NJsonSchema.Yaml.csproj" />
-  </ItemGroup>
-  <ItemGroup>
-    <Content Include="References\**\*.json" CopyToOutputDirectory="PreserveNewest" />
-    <Content Include="References\**\*.yaml" CopyToOutputDirectory="PreserveNewest" />
-  </ItemGroup>
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFrameworks>net8.0</TargetFrameworks>
+        <TargetFrameworks Condition="'$(OS)' == 'Windows_NT'">$(TargetFrameworks);net472</TargetFrameworks>
+        <IsPackable>false</IsPackable>
+        <Nullable>disable</Nullable>
+        <AnalysisLevel>latest-Minimal</AnalysisLevel>
+        <NoWarn>$(NoWarn);1591</NoWarn>
+        <!-- Remove the underscores from member name -->
+        <NoWarn>$(NoWarn),CA1707</NoWarn>
+        <OutputType>Exe</OutputType>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.NET.Test.Sdk" />
+        <PackageReference Include="NSwag.Core.Yaml" />
+        <PackageReference Include="xunit.v3" />
+        <PackageReference Include="xunit.runner.visualstudio" PrivateAssets="all" />
+        <PackageReference Include="NodaTime" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\NJsonSchema.Yaml\NJsonSchema.Yaml.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Content Include="References\**\*.json" CopyToOutputDirectory="PreserveNewest" />
+        <Content Include="References\**\*.yaml" CopyToOutputDirectory="PreserveNewest" />
+    </ItemGroup>
+
 </Project>

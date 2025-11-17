@@ -6,8 +6,6 @@
 // <author>Rico Suter, mail@rsuter.com</author>
 //-----------------------------------------------------------------------
 
-using System;
-
 namespace NJsonSchema.CodeGeneration.TypeScript
 {
     /// <summary>Generates data conversion code.</summary>
@@ -36,9 +34,13 @@ namespace NJsonSchema.CodeGeneration.TypeScript
             var type = parameters.Resolver.Resolve(parameters.Schema, parameters.IsPropertyNullable, parameters.TypeNameHint);
             var valueGenerator = parameters.Settings.ValueGenerator;
 
-            var typeSchema = parameters.Schema.ActualTypeSchema;
-            var dictionaryValueType = parameters.Resolver.TryResolve(typeSchema.AdditionalPropertiesSchema, parameters.TypeNameHint) ?? "any";
-            var dictionaryValueDefaultValue = typeSchema.AdditionalPropertiesSchema != null
+            JsonSchema typeSchema = parameters.Schema.ActualTypeSchema;
+
+            var dictionaryValueType = typeSchema.AdditionalPropertiesSchema != null ?
+                parameters.Resolver.TryResolve(typeSchema.AdditionalPropertiesSchema, parameters.TypeNameHint) ?? "any" :
+                null;
+
+            var dictionaryValueDefaultValue = typeSchema.AdditionalPropertiesSchema != null && dictionaryValueType != null
                 ? valueGenerator.GetDefaultValue(typeSchema.AdditionalPropertiesSchema,
                     typeSchema.AdditionalPropertiesSchema.IsNullable(parameters.Settings.SchemaType), dictionaryValueType, parameters.TypeNameHint,
                     parameters.Settings.GenerateDefaultValues, parameters.Resolver)
@@ -63,6 +65,7 @@ namespace NJsonSchema.CodeGeneration.TypeScript
                 IsDate = IsDate(typeSchema.Format, parameters.Settings.DateTimeType),
                 IsDateTime = IsDateTime(typeSchema.Format, parameters.Settings.DateTimeType),
 
+                // Dictionary
                 IsDictionary = typeSchema.IsDictionary,
                 DictionaryValueType = dictionaryValueType,
                 DictionaryValueDefaultValue = dictionaryValueDefaultValue,
@@ -71,25 +74,31 @@ namespace NJsonSchema.CodeGeneration.TypeScript
                 IsDictionaryValueNewableObject = typeSchema.AdditionalPropertiesSchema != null && IsNewableObject(typeSchema.AdditionalPropertiesSchema, parameters),
                 IsDictionaryValueDate = IsDate(typeSchema.AdditionalPropertiesSchema?.ActualSchema?.Format, parameters.Settings.DateTimeType),
                 IsDictionaryValueDateTime = IsDateTime(typeSchema.AdditionalPropertiesSchema?.ActualSchema?.Format, parameters.Settings.DateTimeType),
-                IsDictionaryValueNewableArray = typeSchema.AdditionalPropertiesSchema?.ActualSchema?.IsArray == true &&
-                    IsNewableObject(typeSchema.AdditionalPropertiesSchema.Item, parameters),
-                DictionaryValueArrayItemType = typeSchema.AdditionalPropertiesSchema?.ActualSchema?.IsArray == true ?
-                    parameters.Resolver.TryResolve(typeSchema.AdditionalPropertiesSchema.Item, "Anonymous") ?? "any" : "any",
 
+                IsDictionaryValueNewableArray =
+                    typeSchema.AdditionalPropertiesSchema?.ActualSchema?.IsArray == true &&
+                    typeSchema.AdditionalPropertiesSchema.Item != null &&
+                    IsNewableObject(typeSchema.AdditionalPropertiesSchema.Item, parameters),
+
+                DictionaryValueArrayItemType =
+                    typeSchema.AdditionalPropertiesSchema?.ActualSchema?.IsArray == true ?
+                    parameters.Resolver.TryResolve(typeSchema.AdditionalPropertiesSchema.Item, "Anonymous") ?? "any" :
+                    "any",
+
+                // Array
                 IsArray = typeSchema.IsArray,
                 ArrayItemType = parameters.Resolver.TryResolve(typeSchema.Item, parameters.TypeNameHint) ?? "any",
                 IsArrayItemNewableObject = typeSchema.Item != null && IsNewableObject(typeSchema.Item, parameters),
                 IsArrayItemDate = IsDate(typeSchema.Item?.Format, parameters.Settings.DateTimeType),
                 IsArrayItemDateTime = IsDateTime(typeSchema.Item?.Format, parameters.Settings.DateTimeType),
 
-                RequiresStrictPropertyInitialization = parameters.Settings.TypeScriptVersion >= 2.7m,
-
+                // Dates
                 //StringToDateCode is used for date and date-time formats
                 UseJsDate = parameters.Settings.DateTimeType == TypeScriptDateTimeType.Date,
                 StringToDateCode = GetStringToDateTime(parameters, typeSchema),
-                StringToDateOnlyCode = parameters.Settings.DateTimeType == TypeScriptDateTimeType.Date 
-                                       && parameters.Settings.ConvertDateToLocalTimezone 
-                    ? "parseDateOnly" 
+                StringToDateOnlyCode = parameters.Settings.DateTimeType == TypeScriptDateTimeType.Date
+                                       && parameters.Settings.ConvertDateToLocalTimezone
+                    ? "parseDateOnly"
                     : GetStringToDateTime(parameters, typeSchema),
                 DateToStringCode = GetDateToString(parameters, typeSchema),
                 DateTimeToStringCode = GetDateTimeToString(parameters, typeSchema),
@@ -133,7 +142,7 @@ namespace NJsonSchema.CodeGeneration.TypeScript
                     return "dayjs";
 
                 default:
-                    throw new ArgumentOutOfRangeException();
+                    throw new ArgumentOutOfRangeException(nameof(parameters));
             }
         }
 
@@ -154,7 +163,7 @@ namespace NJsonSchema.CodeGeneration.TypeScript
                     return "toFormat('yyyy-MM-dd')";
 
                 default:
-                    throw new ArgumentOutOfRangeException();
+                    throw new ArgumentOutOfRangeException(nameof(parameters));
             }
         }
 
@@ -193,107 +202,64 @@ namespace NJsonSchema.CodeGeneration.TypeScript
                     return "toISOString()";
 
                 default:
-                    throw new ArgumentOutOfRangeException();
+                    throw new ArgumentOutOfRangeException(nameof(parameters));
             }
         }
 
-        private static bool IsDateTime(string format, TypeScriptDateTimeType type)
+        private static bool IsDateTime(string? format, TypeScriptDateTimeType type)
         {
             // TODO: Make this more generic (see TypeScriptTypeResolver.ResolveString)
             if (type == TypeScriptDateTimeType.Date)
             {
-                if (format == JsonFormatStrings.DateTime)
-                {
-                    return true;
-                }
-
-                if (format == JsonFormatStrings.Time)
-                {
-                    return false;
-                }
-
-                if (format is JsonFormatStrings.Duration or JsonFormatStrings.TimeSpan)
-                {
-                    return false;
-                }
+                return format == JsonFormatStrings.DateTime;
             }
-            else if (type == TypeScriptDateTimeType.DayJS ||
-                     type == TypeScriptDateTimeType.MomentJS ||
-                     type == TypeScriptDateTimeType.OffsetMomentJS)
+
+            if (type is TypeScriptDateTimeType.DayJS or TypeScriptDateTimeType.MomentJS or TypeScriptDateTimeType.OffsetMomentJS)
             {
-                if (format == JsonFormatStrings.DateTime)
-                {
-                    return true;
-                }
-
-                if (format == JsonFormatStrings.Time)
-                {
-                    return true;
-                }
-
-                if (format is JsonFormatStrings.Duration or JsonFormatStrings.TimeSpan)
-                {
-                    return true;
-                }
+                return format is JsonFormatStrings.DateTime or JsonFormatStrings.Time or JsonFormatStrings.Duration or JsonFormatStrings.TimeSpan;
             }
-            else if (type == TypeScriptDateTimeType.Luxon)
+
+            if (type == TypeScriptDateTimeType.Luxon)
             {
-                if (format == JsonFormatStrings.DateTime)
-                {
-                    return true;
-                }
-
-                if (format == JsonFormatStrings.Time)
-                {
-                    return true;
-                }
-
-                if (format is JsonFormatStrings.Duration or JsonFormatStrings.TimeSpan)
-                {
-                    return true;
-                }
+                return format is JsonFormatStrings.DateTime or JsonFormatStrings.Time or JsonFormatStrings.Duration or JsonFormatStrings.TimeSpan;
             }
             return false;
         }
 
 
-        private static bool IsDate(string format, TypeScriptDateTimeType type)
+        private static bool IsDate(string? format, TypeScriptDateTimeType type)
         {
             // TODO: Make this more generic (see TypeScriptTypeResolver.ResolveString)
             if (type == TypeScriptDateTimeType.Date)
             {
-                if (format == JsonFormatStrings.Date)
-                {
-                    return true;
-                }
+                return format == JsonFormatStrings.Date;
             }
-            else if (type == TypeScriptDateTimeType.DayJS ||
-                     type == TypeScriptDateTimeType.MomentJS ||
-                     type == TypeScriptDateTimeType.OffsetMomentJS)
+
+            if (type is TypeScriptDateTimeType.DayJS or TypeScriptDateTimeType.MomentJS or TypeScriptDateTimeType.OffsetMomentJS)
             {
-                if (format == JsonFormatStrings.Date)
-                {
-                    return true;
-                }
+                return format == JsonFormatStrings.Date;
             }
-            else if (type == TypeScriptDateTimeType.Luxon)
+
+            if (type == TypeScriptDateTimeType.Luxon)
             {
-                if (format == JsonFormatStrings.Date)
-                {
-                    return true;
-                }
+                return format == JsonFormatStrings.Date;
             }
             return false;
         }
 
-        private static bool IsNewableObject(JsonSchema schema, DataConversionParameters parameters)
+        private static bool IsNewableObject(JsonSchema? schema, DataConversionParameters parameters)
         {
-            if (schema.ActualTypeSchema.IsEnumeration)
+            if (schema != null)
             {
-                return false;
+                if (schema.ActualTypeSchema.IsEnumeration)
+                {
+                    return false;
+                }
+
+                return parameters.Resolver.GeneratesType(schema);
             }
 
-            return parameters.Resolver.GeneratesType(schema);
+            return false;
         }
     }
 }

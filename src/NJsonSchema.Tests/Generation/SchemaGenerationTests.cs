@@ -1,10 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using NJsonSchema.NewtonsoftJson.Generation;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.Runtime.Serialization;
-using System.Threading.Tasks;
-using Xunit;
+using NJsonSchema.CodeGeneration.Tests;
 
 namespace NJsonSchema.Tests.Generation
 {
@@ -27,26 +25,26 @@ namespace NJsonSchema.Tests.Generation
         [Fact]
         public async Task When_generating_schema_with_object_property_then_additional_properties_are_not_allowed()
         {
-            //// Arrange
+            // Arrange
 
-            //// Act
-            var schema = JsonSchema.FromType<Foo>();
+            // Act
+            var schema = NewtonsoftJsonSchemaGenerator.FromType<Foo>();
             var schemaData = schema.ToJson();
 
-            //// Assert
+            // Assert
             Assert.False(schema.Properties["Bar"].ActualTypeSchema.AllowAdditionalProperties);
         }
 
         [Fact]
         public async Task When_generating_DateTimeOffset_property_then_format_datetime_must_be_set()
         {
-            //// Arrange
+            // Arrange
 
-            //// Act
-            var schema = JsonSchema.FromType<Foo>();
+            // Act
+            var schema = NewtonsoftJsonSchemaGenerator.FromType<Foo>();
             var schemaData = schema.ToJson();
 
-            //// Assert
+            // Assert
             Assert.Equal(JsonObjectType.String, schema.Properties["Time"].Type);
             Assert.Equal(JsonFormatStrings.DateTime, schema.Properties["Time"].Format);
         }
@@ -54,13 +52,13 @@ namespace NJsonSchema.Tests.Generation
         [Fact]
         public async Task When_generating_schema_with_dictionary_property_then_it_must_allow_additional_properties()
         {
-            //// Arrange
+            // Arrange
             
-            //// Act
-            var schema = JsonSchema.FromType<Foo>();
+            // Act
+            var schema = NewtonsoftJsonSchemaGenerator.FromType<Foo>();
             var schemaData = schema.ToJson();
 
-            //// Assert
+            // Assert
             Assert.True(schema.Properties["Dictionary"].ActualSchema.AllowAdditionalProperties);
             Assert.Equal(JsonObjectType.String, schema.Properties["Dictionary"].ActualSchema.AdditionalPropertiesSchema.ActualSchema.Type);
             // "#/definitions/ref_7de8187d_d860_41fa_a17b_3f395c053cae"
@@ -69,14 +67,12 @@ namespace NJsonSchema.Tests.Generation
         [Fact]
         public async Task When_output_schema_contains_reference_then_schema_reference_path_is_human_readable()
         {
-            //// Arrange
-
-            //// Act
-            var schema = JsonSchema.FromType<Foo>();
+            // Act
+            var schema = NewtonsoftJsonSchemaGenerator.FromType<Foo>();
             var schemaData = schema.ToJson();
 
-            //// Assert
-            Assert.Contains("#/definitions/Bar", schemaData);
+            // Assert
+            await VerifyHelper.Verify(schemaData);
         }
 
         public class DefaultTests
@@ -89,7 +85,7 @@ namespace NJsonSchema.Tests.Generation
         public async Task When_default_value_is_set_on_property_then_default_is_set_in_schema()
         {
             // Arrange
-            var schema = JsonSchema.FromType<DefaultTests>();
+            var schema = NewtonsoftJsonSchemaGenerator.FromType<DefaultTests>();
 
             // Act
             var property = schema.Properties["Number"];
@@ -107,7 +103,7 @@ namespace NJsonSchema.Tests.Generation
         public async Task When_dictionary_value_is_null_then_string_values_are_allowed()
         {
             // Arrange
-            var schema = JsonSchema.FromType<DictTest>();
+            var schema = NewtonsoftJsonSchemaGenerator.FromType<DictTest>();
             var schemaData = schema.ToJson();
 
             var data = @"{
@@ -120,14 +116,14 @@ namespace NJsonSchema.Tests.Generation
             var errors = schema.Validate(data);
 
             // Assert
-            Assert.Equal(0, errors.Count);
+            Assert.Empty(errors);
         }
 
         [Fact]
         public async Task When_type_is_enumerable_it_should_not_stackoverflow_on_JSON_generation()
         {
             // Generate JSON
-            var schema = JsonSchema.FromType<IEnumerable<Tuple<string, string>>>();
+            var schema = NewtonsoftJsonSchemaGenerator.FromType<IEnumerable<Tuple<string, string>>>();
             var json = schema.ToJson();
 
             // Should be reached and not StackOverflowed
@@ -145,7 +141,7 @@ namespace NJsonSchema.Tests.Generation
         public async Task When_property_is_object_then_it_should_not_be_a_dictonary_but_any()
         {
             // Act
-            var schema = JsonSchema.FromType<FilterDto>();
+            var schema = NewtonsoftJsonSchemaGenerator.FromType<FilterDto>();
             var json = schema.ToJson();
 
             // Assert
@@ -165,11 +161,11 @@ namespace NJsonSchema.Tests.Generation
         public async Task When_property_is_static_then_it_is_ignored()
         {
             // Act
-            var schema = JsonSchema.FromType<ClassWithStaticProperty>();
+            var schema = NewtonsoftJsonSchemaGenerator.FromType<ClassWithStaticProperty>();
             var json = schema.ToJson();
 
             // Assert
-            Assert.Equal(1, schema.ActualProperties.Count);
+            Assert.Single(schema.ActualProperties);
             Assert.True(schema.ActualProperties.ContainsKey("Bar"));
         }
         
@@ -196,21 +192,23 @@ namespace NJsonSchema.Tests.Generation
         public async Task When_private_field_is_dataMember_then_it_is_not_ignored1()
         {
             // Act
-            var schema = JsonSchema.FromType<ClassWithPrivateDataMember1>();
+            var schema = NewtonsoftJsonSchemaGenerator.FromType<ClassWithPrivateDataMember1>();
             var json = schema.ToJson();
 
             // Assert
-            Assert.Equal(1, schema.ActualProperties.Count);
+            Assert.Single(schema.ActualProperties);
             Assert.True(schema.ActualProperties.ContainsKey("MyField"));
         }
         
         [DataContract]
-        class ClassWithPrivateDataMember2
+        private class ClassWithPrivateDataMember2
         {
+#pragma warning disable CS0169
             [DataMember(Name = nameof(MyField))] 
             [Display(Name = "My Field", Description = "......")]
             private int _myField;
-            
+#pragma warning restore CS0169
+
             [IgnoreDataMember]
             public string MyField { get; set; }
         }
@@ -219,17 +217,17 @@ namespace NJsonSchema.Tests.Generation
         public async Task When_private_field_is_dataMember_then_it_is_not_ignored2()
         {
             // Act
-            var schema = JsonSchema.FromType<ClassWithPrivateDataMember2>();
+            var schema = NewtonsoftJsonSchemaGenerator.FromType<ClassWithPrivateDataMember2>();
             var json = schema.ToJson();
 
             // Assert
-            Assert.Equal(1, schema.ActualProperties.Count);
+            Assert.Single(schema.ActualProperties);
             Assert.True(schema.ActualProperties.ContainsKey("MyField"));
             Assert.Equal(JsonObjectType.Integer, schema.Properties["MyField"].Type);
         }
         
         [DataContract]
-        class ClassWithPrivateDataMember3
+        private class ClassWithPrivateDataMember3
         {
             [DataMember]
             private string MyField { get; set; }
@@ -239,11 +237,11 @@ namespace NJsonSchema.Tests.Generation
         public async Task When_private_property_is_dataMember_then_it_is_not_ignored()
         {
             // Act
-            var schema = JsonSchema.FromType<ClassWithPrivateDataMember3>();
+            var schema = NewtonsoftJsonSchemaGenerator.FromType<ClassWithPrivateDataMember3>();
             var json = schema.ToJson();
 
             // Assert
-            Assert.Equal(1, schema.ActualProperties.Count);
+            Assert.Single(schema.ActualProperties);
             Assert.True(schema.ActualProperties.ContainsKey("MyField"));
         }
 

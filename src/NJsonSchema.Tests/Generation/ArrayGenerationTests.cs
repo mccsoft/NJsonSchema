@@ -1,8 +1,5 @@
-﻿using System.Collections.Generic;
-using System.Threading.Tasks;
-using Newtonsoft.Json.Linq;
-using NJsonSchema.Generation;
-using Xunit;
+﻿using Newtonsoft.Json.Linq;
+using NJsonSchema.NewtonsoftJson.Generation;
 
 namespace NJsonSchema.Tests.Generation
 {
@@ -18,11 +15,11 @@ namespace NJsonSchema.Tests.Generation
         [Fact]
         public async Task When_property_is_JArray_then_schema_with_any_array_is_generated()
         {
-            //// Act
-            var schema = JsonSchema.FromType<ClassWithJArray>(new JsonSchemaGeneratorSettings { SchemaType = SchemaType.OpenApi3 });
+            // Act
+            var schema = NewtonsoftJsonSchemaGenerator.FromType<ClassWithJArray>(new NewtonsoftJsonSchemaGeneratorSettings { SchemaType = SchemaType.OpenApi3 });
             var json = schema.ToJson();
 
-            //// Assert
+            // Assert
             Assert.Equal(2, schema.ActualProperties.Count);
             var arrayProperty = schema.ActualProperties["Array"].ActualTypeSchema;
             Assert.Equal(JsonObjectType.Array, arrayProperty.Type);
@@ -32,20 +29,20 @@ namespace NJsonSchema.Tests.Generation
 #nullable enable
         public class ClassWithArrayOfNullable
         {
-            public string?[] Array { get; set; } = new string?[0];
+            public string?[] Array { get; set; } = [];
 
-            public List<string?> List { get; set; } = new List<string?>();
+            public List<string?> List { get; set; } = [];
         }
 #nullable restore
 
         [Fact]
         public async Task When_property_is_Array_of_nullable_then_schema_with_array_of_nullable_is_generated()
         {
-            //// Act
-            var schema = JsonSchema.FromType<ClassWithArrayOfNullable>(new JsonSchemaGeneratorSettings { SchemaType = SchemaType.OpenApi3 });
+            // Act
+            var schema = NewtonsoftJsonSchemaGenerator.FromType<ClassWithArrayOfNullable>(new NewtonsoftJsonSchemaGeneratorSettings { SchemaType = SchemaType.OpenApi3 });
             var json = schema.ToJson();
 
-            //// Assert
+            // Assert
             Assert.Equal(2, schema.ActualProperties.Count);
 
             var arrayProperty = schema.ActualProperties["Array"].ActualTypeSchema;
@@ -72,16 +69,16 @@ namespace NJsonSchema.Tests.Generation
         [Fact]
         public async Task When_class_inherits_from_list_then_schema_is_inlined_and_type_is_array()
         {
-            //// Act
-            var schema = JsonSchema.FromType<ListContainer>(new JsonSchemaGeneratorSettings { SchemaType = SchemaType.OpenApi3 });
+            // Act
+            var schema = NewtonsoftJsonSchemaGenerator.FromType<ListContainer>(new NewtonsoftJsonSchemaGeneratorSettings { SchemaType = SchemaType.OpenApi3 });
             var json = schema.ToJson();
 
-            //// Assert
+            // Assert
             Assert.Equal(JsonObjectType.Array, schema.Definitions["SomeModelCollectionResponse"].Type);
             Assert.NotNull(schema.Definitions["SomeModelCollectionResponse"].Item);
         }
 
-#if NET5_0
+#if !NETFRAMEWORK
 
         public class ClassWithAsyncEnumerable
         {
@@ -98,11 +95,11 @@ namespace NJsonSchema.Tests.Generation
         [Fact]
         public async Task When_property_is_async_numerable_then_item_type_is_correct()
         {
-            //// Act
-            var schema = JsonSchema.FromType<ClassWithAsyncEnumerable>(new JsonSchemaGeneratorSettings { SchemaType = SchemaType.OpenApi3 });
+            // Act
+            var schema = NewtonsoftJsonSchemaGenerator.FromType<ClassWithAsyncEnumerable>(new NewtonsoftJsonSchemaGeneratorSettings { SchemaType = SchemaType.OpenApi3 });
             var json = schema.ToJson();
 
-            //// Assert
+            // Assert
             var asyncProperty = schema.ActualProperties["AsyncApples"].ActualTypeSchema;
             Assert.Equal(JsonObjectType.Array, asyncProperty.Type);
             Assert.True(asyncProperty.Item.HasReference);

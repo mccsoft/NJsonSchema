@@ -1,7 +1,6 @@
 using System.Runtime.Serialization;
-using System.Threading.Tasks;
 using Newtonsoft.Json;
-using Xunit;
+using NJsonSchema.NewtonsoftJson.Generation;
 
 namespace NJsonSchema.Tests.Schema
 {
@@ -16,10 +15,10 @@ namespace NJsonSchema.Tests.Schema
         [Fact]
         public async Task When_DataContractAttribute_is_missing_then_DataMember_is_ignored()
         {
-            //// Act
-            var schema = JsonSchema.FromType<MissingDataContract>();
+            // Act
+            var schema = NewtonsoftJsonSchemaGenerator.FromType<MissingDataContract>();
 
-            //// Assert
+            // Assert
             Assert.True(schema.Properties.ContainsKey("Bar"));
         }
 
@@ -36,10 +35,10 @@ namespace NJsonSchema.Tests.Schema
         [Fact]
         public async Task When_DataContractAttribute_is_not_missing_then_DataMember_is_checked()
         {
-            //// Act
-            var schema = JsonSchema.FromType<NotMissingDataContract>();
+            // Act
+            var schema = NewtonsoftJsonSchemaGenerator.FromType<NotMissingDataContract>();
 
-            //// Assert
+            // Assert
             Assert.True(schema.Properties.ContainsKey("bar"));
             Assert.False(schema.Properties.ContainsKey("Foo"));
         }
@@ -55,11 +54,11 @@ namespace NJsonSchema.Tests.Schema
         [Fact]
         public async Task When_class_has_DataContractAttribute_then_properties_without_DataMemberAttributes_are_ignored()
         {
-            //// Act
-            var schema = JsonSchema.FromType<DataContractWithoutDataMember>();
+            // Act
+            var schema = NewtonsoftJsonSchemaGenerator.FromType<DataContractWithoutDataMember>();
 
-            //// Assert
-            Assert.Equal(0, schema.Properties.Count);
+            // Assert
+            Assert.Empty(schema.Properties);
         }
 
 
@@ -73,10 +72,10 @@ namespace NJsonSchema.Tests.Schema
         [Fact]
         public async Task When_class_has_DataContractAttribute_then_property_without_DataMemberAttribute_and_with_JsonPropertyAttribute_is_not_ignored()
         {
-            //// Act
-            var schema = JsonSchema.FromType<DataContractWithoutDataMemberWithJsonProperty>();
+            // Act
+            var schema = NewtonsoftJsonSchemaGenerator.FromType<DataContractWithoutDataMemberWithJsonProperty>();
 
-            //// Assert
+            // Assert
             Assert.True(schema.Properties.ContainsKey("bar"));
         }
 
@@ -92,11 +91,11 @@ namespace NJsonSchema.Tests.Schema
         [Fact]
         public async Task When_class_has_DataContractAttribute_then_property_with_DataMemberAttribute_and_JsonIgnoreAttribute_is_ignored()
         {
-            //// Act
-            var schema = JsonSchema.FromType<DataContractWitDataMemberWithJsonProperty>();
+            // Act
+            var schema = NewtonsoftJsonSchemaGenerator.FromType<DataContractWitDataMemberWithJsonProperty>();
 
-            //// Assert
-            Assert.Equal(0, schema.Properties.Count);
+            // Assert
+            Assert.Empty(schema.Properties);
         }
 
         [DataContract]
@@ -112,10 +111,10 @@ namespace NJsonSchema.Tests.Schema
             // Newtonsoft.Json also respects DataMemberAttribute.IsRequired => this throws an exception
             //var json = JsonConvert.DeserializeObject<DataContractWithRequiredProperty>("{}");
 
-            //// Act
-            var schema = JsonSchema.FromType<DataContractWithRequiredProperty>();
+            // Act
+            var schema = NewtonsoftJsonSchemaGenerator.FromType<DataContractWithRequiredProperty>();
 
-            //// Assert
+            // Assert
             Assert.True(schema.Properties["req"].IsRequired);
         }
     }

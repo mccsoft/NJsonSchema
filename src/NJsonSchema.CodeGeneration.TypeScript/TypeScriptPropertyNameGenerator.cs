@@ -6,32 +6,52 @@
 // <author>Rico Suter, mail@rsuter.com</author>
 //-----------------------------------------------------------------------
 
-using System.Collections.Generic;
-using System.Linq;
-
 namespace NJsonSchema.CodeGeneration.TypeScript
 {
     /// <summary>Generates the property name for a given TypeScript <see cref="JsonSchemaProperty"/>.</summary>
-    public class TypeScriptPropertyNameGenerator : IPropertyNameGenerator
+    public sealed class TypeScriptPropertyNameGenerator : IPropertyNameGenerator
     {
-        /// <summary>Gets or sets the reserved names.</summary>
-        public IEnumerable<string> ReservedPropertyNames { get; set; } = new List<string> { "constructor" };
+        private const string FirstPassChars = "\"@?.=+";
+#if NET8_0_OR_GREATER
+        private static readonly System.Buffers.SearchValues<char> _reservedFirstPassChars = System.Buffers.SearchValues.Create(FirstPassChars);
+#else
+        private static readonly char[] _reservedFirstPassChars = FirstPassChars.ToCharArray();
+#endif
 
-        /// <summary>Generates the property name.</summary>
-        /// <param name="property">The property.</param>
-        /// <returns>The new name.</returns>
-        public virtual string Generate(JsonSchemaProperty property)
+        private const string SecondPassChars = "*#:-";
+#if NET8_0_OR_GREATER
+        private static readonly System.Buffers.SearchValues<char> _reservedSecondPassChars = System.Buffers.SearchValues.Create(SecondPassChars);
+#else
+        private static readonly char[] _reservedSecondPassChars = SecondPassChars.ToCharArray();
+#endif
+
+        /// <summary>Gets or sets the reserved names.</summary>
+        public HashSet<string> ReservedPropertyNames { get; set; } = new(StringComparer.Ordinal) { "constructor", "init", "fromJS", "toJSON" };
+
+        /// <inheritdoc />
+        public string Generate(JsonSchemaProperty property)
         {
-            var name = ConversionUtilities.ConvertToLowerCamelCase(property.Name
-                    .Replace("\"", string.Empty)
+            var name = property.Name;
+
+            if (name.AsSpan().IndexOfAny(_reservedFirstPassChars) != -1)
+            {
+                name = name.Replace("\"", string.Empty)
                     .Replace("@", string.Empty)
                     .Replace("?", string.Empty)
                     .Replace(".", "-")
                     .Replace("=", "-")
-                    .Replace("+", "plus"), true)
-                .Replace("*", "Star")
-                .Replace(":", "_")
-                .Replace("-", "_");
+                    .Replace("+", "plus");
+            }
+
+            name = ConversionUtilities.ConvertToLowerCamelCase(name, true);
+
+            if (name.AsSpan().IndexOfAny(_reservedSecondPassChars) != -1)
+            {
+                name = name.Replace("*", "Star")
+                    .Replace("#", "_")
+                    .Replace(":", "_")
+                    .Replace("-", "_");
+            }
 
             if (ReservedPropertyNames.Contains(name))
             {

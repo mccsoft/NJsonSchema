@@ -1,10 +1,6 @@
 ﻿using Newtonsoft.Json.Linq;
-using NJsonSchema.Generation;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+using NJsonSchema.NewtonsoftJson.Generation;
 using System.Xml.Serialization;
-using Xunit;
 
 namespace NJsonSchema.Tests.Generation
 {
@@ -42,11 +38,11 @@ namespace NJsonSchema.Tests.Generation
             private static WithoutXmlAttributesDefined Data => new WithoutXmlAttributesDefined()
             {
                 Foo = "stringvalue",
-                StringArray = new[] { "S1" },
-                IntArray = new[] { 1 },
-                DoubleArray = new double[] { 1 },
-                DecimalArray = new decimal[] { 1 },
-                InternalItem = new[] { new WithoutXmlAttributeItem() { Name = "Test" } },
+                StringArray = ["S1"],
+                IntArray = [1],
+                DoubleArray = [1],
+                DecimalArray = [1],
+                InternalItem = [new WithoutXmlAttributeItem() { Name = "Test" }],
                 ShouldBeThisPropertyName = new WithXmlAttribute() { Name = "Test2" }
             };
 
@@ -93,9 +89,9 @@ namespace NJsonSchema.Tests.Generation
         [Fact]
         public async Task When_xmlobject_generation_is_active_with_a_type_without_xml_attributes()
         {
-            var schema = JsonSchema.FromType<WithoutXmlAttributesDefined>(new JsonSchemaGeneratorSettings() { GenerateXmlObjects = true });
+            var schema = NewtonsoftJsonSchemaGenerator.FromType<WithoutXmlAttributesDefined>(new NewtonsoftJsonSchemaGeneratorSettings() { GenerateXmlObjects = true });
             
-            //// Assert
+            // Assert
             AssertTypeWithoutXmlAttributes(schema);
         }
 
@@ -155,11 +151,11 @@ namespace NJsonSchema.Tests.Generation
         [Fact]
         public async Task When_xmlobject_generation_is_active_with_a_arraytype_as_parent_with_without_xml_attributes_defined()
         {
-            var schema = JsonSchema.FromType<WithoutXmlAttributesDefined[]>(new JsonSchemaGeneratorSettings() { GenerateXmlObjects = true });
+            var schema = NewtonsoftJsonSchemaGenerator.FromType<WithoutXmlAttributesDefined[]>(new NewtonsoftJsonSchemaGeneratorSettings() { GenerateXmlObjects = true });
             var schemaData = schema.ToJson();
             var schemaObject = JObject.Parse(schemaData);
 
-            //// Assert
+            // Assert
             var propertyXml = schemaObject["xml"];
             Assert.Equal("ArrayOfWithoutXmlAttributesDefined", propertyXml["name"]);
             Assert.True(propertyXml["wrapped"].Value<bool>());
@@ -209,7 +205,7 @@ namespace NJsonSchema.Tests.Generation
         [Fact]
         public async Task When_xmlobject_generation_is_active_with_a_type_without_xml_attributes_and_serialized()
         {
-            var schema = JsonSchema.FromType<WithoutXmlAttributesDefined>(new JsonSchemaGeneratorSettings() { GenerateXmlObjects = true });
+            var schema = NewtonsoftJsonSchemaGenerator.FromType<WithoutXmlAttributesDefined>(new NewtonsoftJsonSchemaGeneratorSettings() { GenerateXmlObjects = true });
             var schemaData = schema.ToJson();
 
             var schemaObject = JObject.Parse(schemaData);
@@ -273,11 +269,11 @@ namespace NJsonSchema.Tests.Generation
             {
                 Foo = "stringvalue",
                 MightBeAAttribute = "stringvalue",
-                StringArray = new[] { "S1" },
-                TheInts = new[] { 1 },
-                InternalItems = new[] { new WithXmlAttributeItem() { Name = "Test" } },
+                StringArray = ["S1"],
+                TheInts = [1],
+                InternalItems = [new WithXmlAttributeItem() { Name = "Test" }],
                 ReferenceProperty = new WithXmlAttributeProperty() { Name = "Test" },
-                ExternalItems2 = new[] { new WithXmlAttributeItem2() { Name = "Test" } },
+                ExternalItems2 = [new WithXmlAttributeItem2() { Name = "Test" }],
             };
 
             public static string CreateTestXml()
@@ -326,12 +322,12 @@ namespace NJsonSchema.Tests.Generation
         [Fact]
         public async Task When_xmlobject_generation_is_active_with_a_type_with_xml_attributes()
         {
-            var schema = JsonSchema.FromType<WithXmlAttributesDefined>(new JsonSchemaGeneratorSettings
+            var schema = NewtonsoftJsonSchemaGenerator.FromType<WithXmlAttributesDefined>(new NewtonsoftJsonSchemaGeneratorSettings
             {
                 GenerateXmlObjects = true
             });
             
-            //// Assert
+            // Assert
             AssertTypeWithXmlAttributes(schema, schema);
         }
 
@@ -389,7 +385,7 @@ namespace NJsonSchema.Tests.Generation
         [Fact]
         public async Task When_xmlobject_generation_is_active_with_a_arraytype_as_parent_with_xml_attributes_defined()
         {
-            var schema = JsonSchema.FromType<WithXmlAttributesDefined[]>(new JsonSchemaGeneratorSettings
+            var schema = NewtonsoftJsonSchemaGenerator.FromType<WithXmlAttributesDefined[]>(new NewtonsoftJsonSchemaGeneratorSettings
             {
                 GenerateXmlObjects = true
             });
@@ -452,7 +448,7 @@ namespace NJsonSchema.Tests.Generation
         [Fact]
         public async Task When_xmlobject_generation_is_active_with_a_type_with_xml_attributes_and_serialized()
         {
-            var schema = JsonSchema.FromType<WithXmlAttributesDefined>(new JsonSchemaGeneratorSettings
+            var schema = NewtonsoftJsonSchemaGenerator.FromType<WithXmlAttributesDefined>(new NewtonsoftJsonSchemaGeneratorSettings
             {
                 GenerateXmlObjects = true
             });
@@ -486,12 +482,12 @@ namespace NJsonSchema.Tests.Generation
         [Fact]
         public async Task When_xmlobject_generation_is_active_with_a_type_with_xml_attributes_that_are_incorrect()
         {
-            var schema = JsonSchema.FromType<WithXmlIncorrectAttributesDefined>(new JsonSchemaGeneratorSettings
+            var schema = NewtonsoftJsonSchemaGenerator.FromType<WithXmlIncorrectAttributesDefined>(new NewtonsoftJsonSchemaGeneratorSettings
             {
                 GenerateXmlObjects = true
             });
 
-            //// Assert
+            // Assert
             var fooProperty = schema.Properties["Foo"];
 
             Assert.Null(fooProperty.Xml);

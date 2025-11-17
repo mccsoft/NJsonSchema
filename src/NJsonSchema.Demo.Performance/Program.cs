@@ -1,30 +1,30 @@
-﻿using System;
+﻿using NJsonSchema.NewtonsoftJson.Generation;
 using System.Diagnostics;
 using System.Runtime.Serialization;
-using System.Threading.Tasks;
 
 namespace NJsonSchema.Demo.Performance
 {
     public class Program
     {
-        static void Main(string[] args)
+        private static void Main(string[] args)
         {
             Run().GetAwaiter().GetResult();
         }
 
-        private static async Task Run()
+        private static Task Run()
         {
             var stopwatch = new Stopwatch();
             stopwatch.Start();
             for (int i = 0; i < 500; i++)
             {
-                var schema = JsonSchema.FromType<Container>();
+                var schema = NewtonsoftJsonSchemaGenerator.FromType<Container>();
                 var json = schema.ToJson();
             }
             stopwatch.Stop();
             
             Console.WriteLine("Time: " + stopwatch.ElapsedMilliseconds);
             Console.ReadKey();
+            return Task.CompletedTask;
         }
     }
 
@@ -60,7 +60,7 @@ namespace NJsonSchema.Demo.Performance
     {
         public static Type[] GetKnownTypes()
         {
-            return new[] { typeof(Pen), typeof(Pencil) };
+            return [typeof(Pen), typeof(Pencil)];
         }
 
         public string Baz { get; set; }

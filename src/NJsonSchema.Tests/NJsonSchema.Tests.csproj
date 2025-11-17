@@ -1,46 +1,53 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFrameworks>net6.0;net461</TargetFrameworks>
-    <IsPackable>false</IsPackable>
-    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
-  </PropertyGroup>
+    <PropertyGroup>
+        <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
+        <TargetFrameworks Condition="'$(OS)' == 'Windows_NT'">$(TargetFrameworks);net472</TargetFrameworks>
+        <IsPackable>false</IsPackable>
+        <Nullable>disable</Nullable>
+        <AnalysisLevel>latest-Minimal</AnalysisLevel>
+        <DocumentationFile>bin\Debug\$(TargetFramework)\NJsonSchema.Tests.xml</DocumentationFile>
+        <NoWarn>$(NoWarn),618,1587,1998,1591</NoWarn>
+        <!-- Remove the underscores from member name -->
+        <NoWarn>$(NoWarn),CA1707</NoWarn>
+        <OutputType>Exe</OutputType>
+    </PropertyGroup>
 
-  <PropertyGroup>
-    <DocumentationFile>bin\Debug\$(TargetFramework)\NJsonSchema.Tests.xml</DocumentationFile>
-    <NoWarn>$(NoWarn),618,1587,1998,1591</NoWarn>
-  </PropertyGroup>
+    <ItemGroup>
+        <Content Include="References\**\*.json" CopyToOutputDirectory="PreserveNewest" />
+        <Content Include="**\TestData\**\*.json" CopyToOutputDirectory="PreserveNewest" />
+    </ItemGroup>
 
-  <ItemGroup>
-    <Content Include="References\**\*.json" CopyToOutputDirectory="Always" />
-  </ItemGroup>
+    <ItemGroup>
+        <PackageReference Include="Microsoft.NET.Test.Sdk" />
+        <PackageReference Include="Verify.XunitV3" />
+        <PackageReference Include="xunit.v3" />
+        <PackageReference Include="xunit.runner.visualstudio" PrivateAssets="all" />
+        <PackageReference Include="NodaTime" />
+    </ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.0.0" />
-    <PackageReference Include="xunit" Version="2.4.1" />
-    <PackageReference Include="xunit.runner.visualstudio" Version="2.4.3" PrivateAssets="all" />
-    <PackageReference Include="NodaTime" Version="3.1.9" />
-    <Reference Condition="'$(TargetFramework)' == 'net461'" Include="System.ComponentModel.DataAnnotations"></Reference>
-    <DotNetCliToolReference Include="dotnet-xunit" Version="2.3.1" />
-  </ItemGroup>
+    <ItemGroup>
+        <Reference Condition="'$(TargetFramework)' == 'net472'" Include="System.ComponentModel.DataAnnotations" />
+    </ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\NJsonSchema\NJsonSchema.csproj" />
-  </ItemGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\NJsonSchema.NewtonsoftJson\NJsonSchema.NewtonsoftJson.csproj" />
+        <ProjectReference Include="..\NJsonSchema\NJsonSchema.csproj" />
+    </ItemGroup>
 
-  <ItemGroup>
-    <Compile Update="Generation\AttributeGenerationTestsResources.Designer.cs">
-      <DesignTime>True</DesignTime>
-      <AutoGen>True</AutoGen>
-      <DependentUpon>AttributeGenerationTestsResources.resx</DependentUpon>
-    </Compile>
-  </ItemGroup>
+    <ItemGroup>
+        <Compile Update="Generation\AttributeGenerationTestsResources.Designer.cs">
+            <DesignTime>True</DesignTime>
+            <AutoGen>True</AutoGen>
+            <DependentUpon>AttributeGenerationTestsResources.resx</DependentUpon>
+        </Compile>
+    </ItemGroup>
 
-  <ItemGroup>
-    <EmbeddedResource Update="Generation\AttributeGenerationTestsResources.resx">
-      <Generator>PublicResXFileCodeGenerator</Generator>
-      <LastGenOutput>AttributeGenerationTestsResources.Designer.cs</LastGenOutput>
-    </EmbeddedResource>
-  </ItemGroup>
+    <ItemGroup>
+        <EmbeddedResource Update="Generation\AttributeGenerationTestsResources.resx">
+            <Generator>PublicResXFileCodeGenerator</Generator>
+            <LastGenOutput>AttributeGenerationTestsResources.Designer.cs</LastGenOutput>
+        </EmbeddedResource>
+    </ItemGroup>
 
 </Project>

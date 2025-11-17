@@ -1,5 +1,4 @@
-﻿using System.Threading.Tasks;
-using Xunit;
+﻿using NJsonSchema.NewtonsoftJson.Generation;
 
 namespace NJsonSchema.Tests.Generation
 {
@@ -13,14 +12,14 @@ namespace NJsonSchema.Tests.Generation
         [Fact]
         public async Task When_public_field_is_available_then_it_is_added_as_property()
         {
-            //// Arrange
+            // Arrange
             
 
-            //// Act
-            var schema = JsonSchema.FromType<MyTest>();
+            // Act
+            var schema = NewtonsoftJsonSchemaGenerator.FromType<MyTest>();
             var json = schema.ToJson();
 
-            //// Assert
+            // Assert
             Assert.True(schema.Properties["MyField"].Type.HasFlag(JsonObjectType.String));
         }
     }

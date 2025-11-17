@@ -6,7 +6,6 @@
 // <author>Rico Suter, mail@rsuter.com</author>
 //-----------------------------------------------------------------------
 
-using System.Collections.Generic;
 using System.Linq;
 
 namespace NJsonSchema.CodeGeneration
@@ -15,7 +14,8 @@ namespace NJsonSchema.CodeGeneration
     public abstract class TypeResolverBase
     {
         private readonly CodeGeneratorSettingsBase _settings;
-        internal readonly Dictionary<JsonSchema, string> _generatedTypeNames = new();
+        internal readonly Dictionary<JsonSchema, string> _generatedTypeNames = [];
+        private readonly HashSet<string> _reservedTypeNames = [];
 
         /// <summary>Initializes a new instance of the <see cref="TypeResolverBase" /> class.</summary>
         /// <param name="settings">The settings.</param>
@@ -31,7 +31,7 @@ namespace NJsonSchema.CodeGeneration
         /// <param name="schema">The schema.</param>
         /// <param name="typeNameHint">The type name hint.</param>
         /// <returns>The type name.</returns>
-        public string TryResolve(JsonSchema schema, string typeNameHint)
+        public string? TryResolve(JsonSchema? schema, string? typeNameHint)
         {
             return schema != null ? Resolve(schema, false, typeNameHint) : null;
         }
@@ -41,13 +41,13 @@ namespace NJsonSchema.CodeGeneration
         /// <param name="isNullable">Specifies whether the given type usage is nullable.</param>
         /// <param name="typeNameHint">The type name hint to use when generating the type and the type name is missing.</param>
         /// <returns>The type name.</returns>
-        public abstract string Resolve(JsonSchema schema, bool isNullable, string typeNameHint);
+        public abstract string Resolve(JsonSchema schema, bool isNullable, string? typeNameHint);
 
         /// <summary>Gets or generates the type name for the given schema.</summary>
         /// <param name="schema">The schema.</param>
         /// <param name="typeNameHint">The type name hint.</param>
         /// <returns>The type name.</returns>
-        public virtual string GetOrGenerateTypeName(JsonSchema schema, string typeNameHint)
+        public virtual string GetOrGenerateTypeName(JsonSchema schema, string? typeNameHint)
         {
             schema = RemoveNullability(schema).ActualSchema;
 
@@ -55,9 +55,9 @@ namespace NJsonSchema.CodeGeneration
 
             if (!_generatedTypeNames.TryGetValue(schema, out var typeNames))
             {
-                var reservedTypeNames = new HashSet<string>(_generatedTypeNames.Values);
-                typeNames = _settings.TypeNameGenerator.Generate(schema, typeNameHint, reservedTypeNames);
+                typeNames = _settings.TypeNameGenerator.Generate(schema, typeNameHint, _reservedTypeNames);
                 _generatedTypeNames[schema] = typeNames;
+                _reservedTypeNames.Add(typeNames);
             }
 
             return typeNames;
@@ -136,7 +136,7 @@ namespace NJsonSchema.CodeGeneration
                 return schema;
             
             // TODO: Method on JsonSchema4?
-            return schema.OneOf.FirstOrDefault(o => !o.IsNullable(SchemaType.JsonSchema)) ?? schema;
+            return schema.OneOf.FirstOrDefault(static o => !o.IsNullable(SchemaType.JsonSchema)) ?? schema;
         }
 
         /// <summary>Gets the actual schema (i.e. when not referencing a type schema or it is inlined)
@@ -188,12 +188,11 @@ namespace NJsonSchema.CodeGeneration
                 return Resolve(schema.AdditionalPropertiesSchema, schema.AdditionalPropertiesSchema.ActualSchema.IsNullable(_settings.SchemaType), null);
             }
 
-            if (schema.AllowAdditionalProperties == false && schema.PatternProperties.Any())
+            if (!schema.AllowAdditionalProperties && schema.PatternProperties.Any())
             {
-                var valueTypes = schema.PatternProperties
+                var valueTypes = new HashSet<string>(schema.PatternProperties
                     .Select(p => Resolve(p.Value, p.Value.IsNullable(_settings.SchemaType), null))
-                    .Distinct()
-                    .ToList();
+                );
 
                 if (valueTypes.Count == 1)
                 {

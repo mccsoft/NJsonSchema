@@ -1,6 +1,5 @@
-using System.Threading.Tasks;
 using NJsonSchema.Annotations;
-using Xunit;
+using NJsonSchema.NewtonsoftJson.Generation;
 
 namespace NJsonSchema.Tests.Generation
 {
@@ -18,13 +17,13 @@ namespace NJsonSchema.Tests.Generation
         [Fact]
         public async Task When_property_is_nullable_then_property_schema_type_is_also_null()
         {
-            //// Arrange
-            var schema = JsonSchema.FromType<ClassRoom>();
+            // Arrange
+            var schema = NewtonsoftJsonSchemaGenerator.FromType<ClassRoom>();
             
-            //// Act
+            // Act
             var json = schema.ToJson();
 
-            //// Assert
+            // Assert
             Assert.False(schema.Properties["Id"].IsRequired);
             Assert.False(schema.Properties["Name"].IsRequired);
             Assert.False(schema.Properties["Size"].IsRequired);
@@ -45,13 +44,13 @@ namespace NJsonSchema.Tests.Generation
         [Fact]
         public async Task When_NotNullAttribute_is_available_then_property_is_not_nullable()
         {
-            //// Arrange
-            var schema = JsonSchema.FromType<NotNullAttributeClass>();
+            // Arrange
+            var schema = NewtonsoftJsonSchemaGenerator.FromType<NotNullAttributeClass>();
 
-            //// Act
+            // Act
             var json = schema.ToJson();
 
-            //// Assert
+            // Assert
             Assert.True(schema.Properties["Foo"].IsNullable(SchemaType.JsonSchema));
             Assert.False(schema.Properties["Bar"].IsNullable(SchemaType.JsonSchema));
         }

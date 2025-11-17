@@ -13,7 +13,7 @@ namespace NJsonSchema.References
     {
         /// <summary>Finds the root parent of this schema.</summary>
         /// <returns>The parent schema or this when this is the root.</returns>
-        public static object FindParentDocument(this IJsonReference obj)
+        public static object? FindParentDocument(this IJsonReference obj)
         {
             if (obj.DocumentPath != null)
             {
@@ -26,9 +26,9 @@ namespace NJsonSchema.References
                 return obj;
             }
 
-            while ((parent as IJsonReference)?.PossibleRoot != null)
+            while (parent is IJsonReference { PossibleRoot: not null })
             {
-                parent = ((IJsonReference)parent).PossibleRoot;
+                parent = ((IJsonReference)parent!).PossibleRoot;
                 if (parent is IDocumentPathProvider pathProvider && pathProvider.DocumentPath != null)
                 {
                     return parent;

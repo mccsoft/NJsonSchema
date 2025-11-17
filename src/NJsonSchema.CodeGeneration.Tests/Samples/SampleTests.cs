@@ -1,10 +1,8 @@
-﻿using System;
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using System.ComponentModel.DataAnnotations;
-using System.Threading.Tasks;
 using Newtonsoft.Json.Linq;
 using NJsonSchema.CodeGeneration.TypeScript;
-using Xunit;
+using NJsonSchema.NewtonsoftJson.Generation;
 
 namespace NJsonSchema.CodeGeneration.Tests.Samples
 {
@@ -53,20 +51,20 @@ namespace NJsonSchema.CodeGeneration.Tests.Samples
         [Fact]
         public async Task Demo()
         {
-            var schema = JsonSchema.FromType<Person>();
+            var schema = NewtonsoftJsonSchemaGenerator.FromType<Person>();
             var schemaJsonData = schema.ToJson();
             var errors = schema.Validate("{}");
-            var generator = new TypeScriptGenerator(schema, new TypeScriptGeneratorSettings { TypeStyle = TypeScriptTypeStyle.Class, TypeScriptVersion = 2.0m });
+            var generator = new TypeScriptGenerator(schema, new TypeScriptGeneratorSettings { TypeStyle = TypeScriptTypeStyle.Class });
             var code = generator.GenerateFile();
         }
 
         [Fact]
         public async Task Demo2()
         {
-            var schema = JsonSchema.FromType<Person>();
+            var schema = NewtonsoftJsonSchemaGenerator.FromType<Person>();
             var schemaJsonData = schema.ToJson();
             var errors = schema.Validate("{}");
-            var generator = new TypeScriptGenerator(schema, new TypeScriptGeneratorSettings { TypeStyle = TypeScriptTypeStyle.Interface, TypeScriptVersion = 2.0m });
+            var generator = new TypeScriptGenerator(schema, new TypeScriptGeneratorSettings { TypeStyle = TypeScriptTypeStyle.Interface });
             var code = generator.GenerateFile();
         }
 
@@ -74,7 +72,7 @@ namespace NJsonSchema.CodeGeneration.Tests.Samples
         [Fact]
         public async Task When_JSON_contains_DateTime_is_available_then_string_validator_validates_correctly()
         {
-            //// Arrange
+            // Arrange
             var schemaJson = @"{
             ""$schema"": ""http://json-schema.org/draft-04/schema#"",
             ""type"": ""object"",
@@ -96,17 +94,17 @@ namespace NJsonSchema.CodeGeneration.Tests.Samples
                 ""PatternDate"":""2012-11-07T00:00:00Z""
             }";
 
-            //// Act
+            // Act
             var errors = schema.Validate(dataJson);
 
-            //// Assert
-            Assert.Equal(0, errors.Count);
+            // Assert
+            Assert.Empty(errors);
         }
 
         [Fact]
         public async Task When_JSON_contains_DateTime_is_available_then_JObject_validator_validates_correctly()
         {
-            //// Arrange
+            // Arrange
             var schemaJson = @"{
             ""$schema"": ""http://json-schema.org/draft-04/schema#"",
             ""type"": ""object"",
@@ -130,11 +128,11 @@ namespace NJsonSchema.CodeGeneration.Tests.Samples
 
             var value = data["SimpleDate"].Value<string>(); // not original format
 
-            //// Act
+            // Act
             var errors = schema.Validate(data);
 
-            //// Assert
-            Assert.Equal(0, errors.Count);
+            // Assert
+            Assert.Empty(errors);
         }
     }
 }

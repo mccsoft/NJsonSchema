@@ -1,8 +1,5 @@
-﻿using System.Collections.Generic;
-using System.Threading.Tasks;
-using Newtonsoft.Json;
-using NJsonSchema.Generation;
-using Xunit;
+﻿using Newtonsoft.Json;
+using NJsonSchema.NewtonsoftJson.Generation;
 
 namespace NJsonSchema.Tests.Generation
 {
@@ -19,12 +16,12 @@ namespace NJsonSchema.Tests.Generation
         [Fact]
         public async Task When_class_has_property_with_JsonExtensionDataAttribute_on_property_then_AdditionalProperties_schema_is_set()
         {
-            //// Act
-            var schema = JsonSchema.FromType<ClassWithExtensionData>(new JsonSchemaGeneratorSettings { SchemaType = SchemaType.OpenApi3 });
+            // Act
+            var schema = NewtonsoftJsonSchemaGenerator.FromType<ClassWithExtensionData>(new NewtonsoftJsonSchemaGeneratorSettings { SchemaType = SchemaType.OpenApi3 });
             var json = schema.ToJson();
 
-            //// Assert
-            Assert.Equal(1, schema.ActualProperties.Count);
+            // Assert
+            Assert.Single(schema.ActualProperties);
             Assert.True(schema.AllowAdditionalProperties);
             Assert.True(schema.AdditionalPropertiesSchema.ActualSchema.IsAnyType);
         }

@@ -1,9 +1,6 @@
-﻿using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using System.Collections.ObjectModel;
 using Newtonsoft.Json;
-using Xunit;
+using NJsonSchema.NewtonsoftJson.Generation;
 
 namespace NJsonSchema.Tests.Conversion
 {
@@ -22,16 +19,16 @@ namespace NJsonSchema.Tests.Conversion
         [Fact]
         public async Task When_converting_type_inheriting_from_dictionary_then_it_should_be_correct()
         {
-            //// Act
+            // Act
             var dict = new DictionarySubType();
             dict.Foo = "abc";
             dict.Add("bar", new List<string> { "a", "b" });
             var json = JsonConvert.SerializeObject(dict);
 
-            var schema = JsonSchema.FromType<DictionarySubType>();
+            var schema = NewtonsoftJsonSchemaGenerator.FromType<DictionarySubType>();
             var data = schema.ToJson();
 
-            //// Assert
+            // Assert
             Assert.Equal(JsonObjectType.Object, schema.ActualTypeSchema.Type);
             Assert.DoesNotContain("Foo", json);
             Assert.DoesNotContain("foo", json);
@@ -89,17 +86,17 @@ namespace NJsonSchema.Tests.Conversion
 
         private async Task When_converting_smth_then_items_must_correctly_be_loaded(string propertyName)
         {
-            //// Act
-            var schema = JsonSchema.FromType<MyType>();
+            // Act
+            var schema = NewtonsoftJsonSchemaGenerator.FromType<MyType>();
             var schemaData = schema.ToJson();
 
-            //// Assert
+            // Assert
             var property = schema.Properties[propertyName];
 
             Assert.Equal(JsonObjectType.Array | JsonObjectType.Null, property.Type);
-            Assert.Equal(JsonObjectType.Object, property.ActualSchema.Item.ActualSchema.Type);
+            Assert.Equal(JsonObjectType.Object, property.ActualSchema.Item?.ActualSchema.Type);
             Assert.Contains(schema.Definitions, d => d.Key == "MySubtype");
-            Assert.Equal(JsonObjectType.String | JsonObjectType.Null, property.ActualSchema.Item.ActualSchema.Properties["Id"].Type);
+            Assert.Equal(JsonObjectType.String | JsonObjectType.Null, property.ActualSchema.Item?.ActualSchema.Properties["Id"].Type);
         }
     }
 }

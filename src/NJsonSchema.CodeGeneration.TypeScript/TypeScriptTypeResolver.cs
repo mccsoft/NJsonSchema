@@ -6,7 +6,6 @@
 // <author>Rico Suter, mail@rsuter.com</author>
 //-----------------------------------------------------------------------
 
-using System;
 using System.Linq;
 
 namespace NJsonSchema.CodeGeneration.TypeScript
@@ -28,7 +27,7 @@ namespace NJsonSchema.CodeGeneration.TypeScript
         public TypeScriptGeneratorSettings Settings { get; }
 
         /// <summary>Gets or sets the namespace of the generated classes.</summary>
-        public string Namespace { get; set; }
+        public string? Namespace { get; set; }
 
         /// <summary>Resolves and possibly generates the specified schema. Returns the type name with a 'I' prefix if the feature is supported for the given schema.</summary>
         /// <param name="schema">The schema.</param>
@@ -36,7 +35,7 @@ namespace NJsonSchema.CodeGeneration.TypeScript
         /// <param name="typeNameHint">The type name hint to use when generating the type and the type name is missing.</param>
         /// <returns>The type name.</returns>
         /// <exception cref="ArgumentNullException"><paramref name="schema"/> is <see langword="null" />.</exception>
-        public string ResolveConstructorInterfaceName(JsonSchema schema, bool isNullable, string typeNameHint)
+        public string ResolveConstructorInterfaceName(JsonSchema schema, bool isNullable, string? typeNameHint)
         {
             return Resolve(schema, typeNameHint, true);
         }
@@ -47,7 +46,7 @@ namespace NJsonSchema.CodeGeneration.TypeScript
         /// <param name="typeNameHint">The type name hint to use when generating the type and the type name is missing.</param>
         /// <returns>The type name.</returns>
         /// <exception cref="ArgumentNullException"><paramref name="schema"/> is <see langword="null" />.</exception>
-        public override string Resolve(JsonSchema schema, bool isNullable, string typeNameHint)
+        public override string Resolve(JsonSchema schema, bool isNullable, string? typeNameHint)
         {
             return Resolve(schema, typeNameHint, false);
         }
@@ -55,7 +54,9 @@ namespace NJsonSchema.CodeGeneration.TypeScript
         /// <summary>Gets a value indicating whether the schema supports constructor conversion.</summary>
         /// <param name="schema">The schema.</param>
         /// <returns>The result.</returns>
-        public bool SupportsConstructorConversion(JsonSchema schema)
+#pragma warning disable CA1822
+        public bool SupportsConstructorConversion(JsonSchema? schema)
+#pragma warning restore CA1822
         {
             return schema?.ActualSchema.ResponsibleDiscriminatorObject == null;
         }
@@ -73,7 +74,7 @@ namespace NJsonSchema.CodeGeneration.TypeScript
             return base.IsDefinitionTypeSchema(schema);
         }
 
-        private string Resolve(JsonSchema schema, string typeNameHint, bool addInterfacePrefix)
+        private string Resolve(JsonSchema schema, string? typeNameHint, bool addInterfacePrefix)
         {
             if (schema == null)
             {
@@ -108,7 +109,7 @@ namespace NJsonSchema.CodeGeneration.TypeScript
 
             if (type.IsInteger() && !schema.ActualTypeSchema.IsEnumeration)
             {
-                return ResolveInteger(schema.ActualTypeSchema, typeNameHint);
+                return TypeScriptTypeResolver.ResolveInteger(schema.ActualTypeSchema, typeNameHint);
             }
 
             if (type.IsBoolean())
@@ -154,8 +155,8 @@ namespace NJsonSchema.CodeGeneration.TypeScript
                 var resolvedType = ResolveDictionaryKeyType(schema, defaultType);
                 if (resolvedType != defaultType)
                 {
-                    var keyType = Settings.TypeScriptVersion >= 2.1m ? prefix + resolvedType : defaultType;
-                    if (keyType != defaultType && schema.DictionaryKey.ActualTypeSchema.IsEnumeration)
+                    var keyType = prefix + resolvedType;
+                    if (keyType != defaultType && schema.DictionaryKey?.ActualTypeSchema.IsEnumeration == true)
                     {
                         if (Settings.EnumStyle == TypeScriptEnumStyle.Enum)
                         {
@@ -166,7 +167,9 @@ namespace NJsonSchema.CodeGeneration.TypeScript
                             return $"{{ [key in {keyType}]?: {valueType}; }}";
                         }
 
+#pragma warning disable CA2208
                         throw new ArgumentOutOfRangeException(nameof(Settings.EnumStyle), Settings.EnumStyle, "Unknown enum style");
+#pragma warning restore CA2208
                     }
 
                     return $"{{ [key: {keyType}]: {valueType}; }}";
@@ -177,7 +180,7 @@ namespace NJsonSchema.CodeGeneration.TypeScript
 
             if (Settings.UseLeafType &&
                 schema.DiscriminatorObject == null &&
-                schema.ActualTypeSchema.DiscriminatorObject != null)
+                schema.ActualTypeSchema.ActualDiscriminatorObject != null)
             {
                 var types = schema.ActualTypeSchema.ActualDiscriminatorObject.Mapping
                     .Select(m => Resolve(
@@ -193,7 +196,7 @@ namespace NJsonSchema.CodeGeneration.TypeScript
                 GetOrGenerateTypeName(schema, typeNameHint);
         }
 
-        private string ResolveString(JsonSchema schema, string typeNameHint)
+        private string ResolveString(JsonSchema schema, string? typeNameHint)
         {
             // TODO: Make this more generic (see DataConversionGenerator.IsDate)
             if (Settings.DateTimeType == TypeScriptDateTimeType.Date)
@@ -218,8 +221,7 @@ namespace NJsonSchema.CodeGeneration.TypeScript
                     return "string";
                 }
             }
-            else if (Settings.DateTimeType == TypeScriptDateTimeType.MomentJS ||
-                     Settings.DateTimeType == TypeScriptDateTimeType.OffsetMomentJS)
+            else if (Settings.DateTimeType is TypeScriptDateTimeType.MomentJS or TypeScriptDateTimeType.OffsetMomentJS)
             {
                 if (schema.Format == JsonFormatStrings.Date)
                 {
@@ -289,23 +291,23 @@ namespace NJsonSchema.CodeGeneration.TypeScript
             return "string";
         }
 
-        private string ResolveInteger(JsonSchema schema, string typeNameHint)
+        private static string ResolveInteger(JsonSchema schema, string? typeNameHint)
         {
             return "number";
         }
 
-        private string ResolveArrayOrTuple(JsonSchema schema, string typeNameHint, bool addInterfacePrefix)
+        private string ResolveArrayOrTuple(JsonSchema schema, string? typeNameHint, bool addInterfacePrefix)
         {
             if (schema.Item != null)
             {
-                var isObject = schema.Item?.ActualSchema.Type.IsObject() == true;
-                var isDictionary = schema.Item?.ActualSchema.IsDictionary == true;
+                var isObject = schema.Item.ActualSchema.Type.IsObject();
+                var isDictionary = schema.Item.ActualSchema.IsDictionary;
                 var prefix = addInterfacePrefix && SupportsConstructorConversion(schema.Item) && isObject && !isDictionary ? "I" : "";
 
                 if (Settings.UseLeafType)
                 {
                     var itemTypes = Resolve(schema.Item, true, typeNameHint) // TODO: Make typeNameHint singular if possible
-                        .Split(new[] { UnionPipe }, StringSplitOptions.RemoveEmptyEntries)
+                        .Split([UnionPipe], StringSplitOptions.RemoveEmptyEntries)
                         .Select(x => GetNullableItemType(schema, prefix + x))
                         .ToList();
 
@@ -314,15 +316,15 @@ namespace NJsonSchema.CodeGeneration.TypeScript
                     // is TypeUnion
                     if (itemTypes.Count > 1)
                     {
-                        itemType = string.Format("({0})", itemType);
+                        itemType = $"({itemType})";
                     }
 
-                    return string.Format("{0}[]", itemType);
+                    return $"{itemType}[]";
                 }
                 else
                 {
                     var itemType = prefix + Resolve(schema.Item, true, typeNameHint);
-                    return string.Format("{0}[]", GetNullableItemType(schema, itemType)); // TODO: Make typeNameHint singular if possible
+                    return $"{GetNullableItemType(schema, itemType)}[]"; // TODO: Make typeNameHint singular if possible
                 }
             }
 
@@ -332,7 +334,7 @@ namespace NJsonSchema.CodeGeneration.TypeScript
                     .Select(s => GetNullableItemType(s, Resolve(s, false, null)))
                     .ToArray();
 
-                return string.Format("[" + string.Join(", ", tupleTypes) + "]");
+                return $"[{string.Join(", ", tupleTypes)}]";
             }
 
             return "any[]";
@@ -340,9 +342,9 @@ namespace NJsonSchema.CodeGeneration.TypeScript
 
         private string GetNullableItemType(JsonSchema schema, string itemType)
         {
-            if (Settings.SupportsStrictNullChecks && schema.Item.IsNullable(Settings.SchemaType))
+            if (schema.Item?.IsNullable(Settings.SchemaType) == true)
             {
-                return string.Format("({0} | {1})", itemType, Settings.NullValue.ToString().ToLowerInvariant());
+                return $"({itemType} | {Settings.NullValue.ToString().ToLowerInvariant()})";
             }
 
             return itemType;

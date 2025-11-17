@@ -1,10 +1,28 @@
-﻿#if !NET461
+﻿using NJsonSchema.Converters;
+using System.Text.Json;
+using NJsonSchema.CodeGeneration.Tests;
 
-using System.Threading.Tasks;
-using Xunit;
+#if !NETFRAMEWORK
+using System.Text.Json.Serialization;
+#endif
 
 namespace NJsonSchema.Tests.Generation.SystemTextJson
 {
+#if NETFRAMEWORK
+    file static class StringExtensions {
+        /// <summary>
+        /// Mimic .NET 6+ String.ReplaceLineEndings
+        /// </summary>
+        public static string ReplaceLineEndings(this string content, string lineSeparator = "\n")
+        {
+            return string.Join(
+                lineSeparator,
+                content.Replace("\r\n", "\n").Split('\r', '\n', '\f', '\u0085', '\u2028', '\u2029')
+            );
+        }
+    }
+#endif
+
     public class SystemTextJsonInheritanceTests
     {
         public class Apple : Fruit
@@ -28,16 +46,83 @@ namespace NJsonSchema.Tests.Generation.SystemTextJson
         [Fact]
         public async Task When_using_JsonInheritanceAttribute_and_SystemTextJson_then_schema_is_correct()
         {
-            //// Act
+            // Act
             var schema = JsonSchema.FromType<Fruit>();
-            var data = schema.ToJson();
+            var data = schema.ToJson().ReplaceLineEndings();
 
-            //// Assert
-            Assert.NotNull(data);
-            Assert.Contains(@"""a"": """, data);
-            Assert.Contains(@"""o"": """, data);
+            // Assert
+            await VerifyHelper.Verify(data);
         }
+
+        [Fact]
+        public async Task When_discriminator_is_wrong_then_no_stackoverflow()
+        {
+            // Act & Assert
+            Assert.Throws<InvalidOperationException>(() => // Throws "Could not find subtype of..."
+            {
+                JsonSerializer.Deserialize<Fruit>("{\"k\": \"invalid\"}");
+            });            
+        }
+
+#if !NETFRAMEWORK
+
+        public class Apple2 : Fruit2
+        {
+            public string Foo { get; set; }
+        }
+
+        public class Orange2 : Fruit2
+        {
+            public string Bar { get; set; }
+        }
+
+        [JsonDerivedType(typeof(Apple2), "a")]
+        [JsonDerivedType(typeof(Orange2), "o")]
+        [JsonPolymorphic(TypeDiscriminatorPropertyName = "k")]
+        public class Fruit2
+        {
+            public string Baz { get; set; }
+        }
+
+        [Fact]
+        public async Task When_using_native_attributes_in_SystemTextJson_then_schema_is_correct()
+        {
+            // Act
+            var schema = JsonSchema.FromType<Fruit2>();
+            var data = schema.ToJson().ReplaceLineEndings();
+
+            // Assert
+            await VerifyHelper.Verify(data);
+        }
+
+        public class Dalmation : Dog
+        {
+            public string Foo { get; set; }
+        }
+
+        public class Poodle : Dog
+        {
+            public string Bar { get; set; }
+        }
+
+        [JsonDerivedType(typeof(Dalmation), 1)]
+        [JsonDerivedType(typeof(Poodle), 2)]
+        [JsonPolymorphic(TypeDiscriminatorPropertyName = "breed")]
+        public class Dog
+        {
+            public string Baz { get; set; }
+        }
+
+        [Fact]
+        public async Task When_using_native_attributes_and_integer_discriminator_in_SystemTextJson_then_schema_is_correct()
+        {
+            // Act
+            var schema = JsonSchema.FromType<Dog>();
+            var data = schema.ToJson().ReplaceLineEndings();
+
+            // Assert
+            await VerifyHelper.Verify(data);
+        }
+#endif
     }
 }
-
-#endif

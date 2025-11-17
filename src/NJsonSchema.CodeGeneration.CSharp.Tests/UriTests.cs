@@ -1,7 +1,6 @@
-﻿using System;
-using System.Threading.Tasks;
-using Newtonsoft.Json;
-using Xunit;
+﻿using Newtonsoft.Json;
+using NJsonSchema.CodeGeneration.Tests;
+using NJsonSchema.NewtonsoftJson.Generation;
 
 namespace NJsonSchema.CodeGeneration.CSharp.Tests
 {
@@ -15,29 +14,30 @@ namespace NJsonSchema.CodeGeneration.CSharp.Tests
         [Fact]
         public async Task When_property_is_uri_then_csharp_output_is_also_uri()
         {
-            //// Arrange
-            var schema = JsonSchema.FromType<ClassWithUri>();
+            // Arrange
+            var schema = NewtonsoftJsonSchemaGenerator.FromType<ClassWithUri>();
             var json = schema.ToJson();
             var generator = new CSharpGenerator(schema);
 
-            //// Act
+            // Act
             var code = generator.GenerateFile("MyClass");
 
-            //// Assert
-            Assert.Contains("public System.Uri MyUri", code);
+            // Assert
+            await VerifyHelper.Verify(code);
+            CSharpCompiler.AssertCompile(code);
         }
 
         [Fact]
         public void When_uri_is_relative_then_it_is_serialized_and_deserialized_correctly()
         {
-            //// Arrange
+            // Arrange
             var obj = new ClassWithUri { MyUri = new Uri("abc/def", UriKind.Relative) };
 
-            //// Act
+            // Act
             var json = JsonConvert.SerializeObject(obj);
             var obj2 = JsonConvert.DeserializeObject<ClassWithUri>(json);
 
-            //// Assert
+            // Assert
             Assert.Equal("{\"MyUri\":\"abc/def\"}", json);
             Assert.Equal(obj.MyUri, obj2.MyUri);
         }
@@ -45,14 +45,14 @@ namespace NJsonSchema.CodeGeneration.CSharp.Tests
         [Fact]
         public void When_uri_is_absolute_then_it_is_serialized_and_deserialized_correctly()
         {
-            //// Arrange
+            // Arrange
             var obj = new ClassWithUri { MyUri = new Uri("https://abc/def", UriKind.Absolute) };
 
-            //// Act
+            // Act
             var json = JsonConvert.SerializeObject(obj);
             var obj2 = JsonConvert.DeserializeObject<ClassWithUri>(json);
 
-            //// Assert
+            // Assert
             Assert.Equal("{\"MyUri\":\"https://abc/def\"}", json);
             Assert.Equal(obj.MyUri, obj2.MyUri);
         }
